@@ -10,4 +10,8 @@
       <ion-title size="large">dashboard</ion-title>
     </ion-toolbar>
   </ion-header>
+
+
+  <ion-datetime presentation="date" [(ngModel)]="datetime"></ion-datetime>
+  <ion-button (click)="carregarDadosPorData(datetime)">Default</ion-button>
 </ion-content>

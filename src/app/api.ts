@@ -6,11 +6,16 @@ import { Observable } from 'rxjs';
   providedIn: 'root'
 })
 export class Api {
-  private apiUrl: string = '/api/leitura';
+  private apiUrl: string = 'https://esp32-mongodb-idev3.onrender.com';
+  private collection:string = 'thalisson'
 
   constructor(private http:HttpClient) {}
 
-  getSensores():Observable<any> {
-    return this.http.get<any[]>(this.apiUrl);
+  public getSensores():Observable<any> {
+    return this.http.get<any[]>(this.apiUrl + '/api/leituras/' + this.collection);
+  }
+
+  public getDadosPorData(data:string):Observable<any> {
+    return this.http.get<any[]>(this.apiUrl + '/api/historico-dia/' + this.collection + `?data=${data}`);
   }
 }
