@@ -1,17 +1,211 @@
 <ion-header [translucent]="true">
-  <ion-toolbar>
-    <ion-title>dashboard</ion-title>
+  <ion-toolbar color="primary">
+    <ion-title>
+      <ion-icon name="stats-chart" style="vertical-align: middle; margin-right: 8px;"></ion-icon>
+      Dashboard de Sensores
+    </ion-title>
   </ion-toolbar>
 </ion-header>
 
-<ion-content [fullscreen]="true">
-  <ion-header collapse="condense">
-    <ion-toolbar>
-      <ion-title size="large">dashboard</ion-title>
-    </ion-toolbar>
-  </ion-header>
+<ion-content [fullscreen]="true" class="ion-padding">
+  
+  <!-- Status de Atualização -->
+  <ion-card class="status-card">
+    <ion-card-content>
+      <div class="status-content">
+        <div class="status-info">
+          <ion-icon 
+            [name]="atualizacaoAutomatica ? 'sync-circle' : 'pause-circle'" 
+            [color]="atualizacaoAutomatica ? 'success' : 'medium'"
+            class="status-icon">
+          </ion-icon>
+          <div>
+            <h3>{{ atualizacaoAutomatica ? 'Atualização Automática' : 'Atualização Pausada' }}</h3>
+            <p *ngIf="ultimaAtualizacao" class="ultima-atualizacao">
+              Última atualização: {{ ultimaAtualizacao | date:'dd/MM/yyyy HH:mm:ss' }}
+            </p>
+          </div>
+        </div>
+        
+        <div class="status-actions">
+          <ion-button 
+            [color]="atualizacaoAutomatica ? 'medium' : 'success'" 
+            (click)="toggleAtualizacaoAutomatica()"
+            size="small">
+            <ion-icon [name]="atualizacaoAutomatica ? 'pause' : 'play'" slot="start"></ion-icon>
+            {{ atualizacaoAutomatica ? 'Pausar' : 'Iniciar' }}
+          </ion-button>
+          
+          <ion-button 
+            color="primary" 
+            (click)="carregarDados()"
+            [disabled]="carregando"
+            size="small">
+            <ion-icon name="refresh" slot="start"></ion-icon>
+            {{ carregando ? 'Atualizando...' : 'Atualizar' }}
+          </ion-button>
+        </div>
+      </div>
+    </ion-card-content>
+  </ion-card>
 
+  <!-- Grid de Sensores -->
+  <div class="sensores-header">
+    <h2>Leituras Atuais</h2>
+    <ion-badge *ngIf="dadosSensores.length > 0" color="primary">
+      {{ dadosSensores.length }} sensor(es)
+    </ion-badge>
+  </div>
 
-  <ion-datetime presentation="date" [(ngModel)]="datetime"></ion-datetime>
-  <ion-button (click)="carregarDadosPorData(datetime)">Default</ion-button>
+  <ion-spinner *ngIf="carregando && dadosSensores.length === 0" name="crescent" class="spinner-center"></ion-spinner>
+
+  <ion-grid *ngIf="!carregando || dadosSensores.length > 0">
+    <ion-row>
+      <ion-col size="12" size-md="6" size-lg="4" *ngFor="let sensor of dadosSensores">
+        <ion-card class="sensor-card" [class.pulse]="carregando">
+          <ion-card-header>
+            <div class="sensor-header">
+              <ion-icon 
+                [name]="getIconeSensor(sensor.tipo || 'default')" 
+                [color]="getCorSensor(sensor.tipo || 'default')"
+                class="sensor-icon-large">
+              </ion-icon>
+              <div>
+                <ion-card-title>{{ sensor.nome || sensor.tipo || 'Sensor' }}</ion-card-title>
+                <ion-card-subtitle *ngIf="sensor.localizacao">
+                  <ion-icon name="location-outline" style="vertical-align: middle;"></ion-icon>
+                  {{ sensor.localizacao }}
+                </ion-card-subtitle>
+              </div>
+            </div>
+          </ion-card-header>
+          
+          <ion-card-content>
+            <div class="sensor-value">
+              <span class="value">{{ formatarData(sensor.timestamp || sensor.data) }}</span>
+            </div>
+            
+            <ion-list class="sensor-details" lines="none">
+              <ion-item *ngIf="sensor.tipo">
+                <ion-icon name="pricetag-outline" slot="start" color="medium"></ion-icon>
+                <ion-label>
+                  <p>Tipo</p>
+                  <h3>{{ sensor.tipo }}</h3>
+                </ion-label>
+              </ion-item>
+              
+              <ion-item *ngIf="sensor.status">
+                <ion-icon name="checkmark-circle-outline" slot="start" [color]="sensor.status === 'ativo' ? 'success' : 'medium'"></ion-icon>
+                <ion-label>
+                  <p>Status</p>
+                  <h3>{{ sensor.status }}</h3>
+                </ion-label>
+              </ion-item>
+
+              <!-- Propriedades customizadas do sensor -->
+              <ion-item *ngFor="let prop of getPropriedadesCustomizadas(sensor)">
+                <ion-icon 
+                  [name]="getIconePropriedade(prop.chave)" 
+                  slot="start" 
+                  [color]="getCorPropriedade(prop.valor)">
+                </ion-icon>
+                <ion-label>
+                  <p>{{ prop.chave }}</p>
+                  <h3>{{ prop.valor }}</h3>
+                </ion-label>
+              </ion-item>
+            </ion-list>
+          </ion-card-content>
+        </ion-card>
+      </ion-col>
+    </ion-row>
+  </ion-grid>
+
+  <ion-card *ngIf="!carregando && dadosSensores.length === 0" class="empty-state">
+    <ion-card-content>
+      <ion-icon name="cube-outline" class="empty-icon"></ion-icon>
+      <h2>Nenhum dado disponível</h2>
+      <p>Aguardando leituras dos sensores...</p>
+    </ion-card-content>
+  </ion-card>
+
+  <!-- Consulta Histórica -->
+  <ion-card class="historico-card">
+    <ion-card-header>
+      <ion-card-title>
+        <ion-icon name="calendar-outline" style="vertical-align: middle; margin-right: 8px;"></ion-icon>
+        Consultar Histórico
+      </ion-card-title>
+    </ion-card-header>
+    <ion-card-content>
+      <ion-datetime 
+        presentation="date" 
+        [(ngModel)]="datetime"
+        locale="pt-BR"
+        [max]="dataMaxima"
+        class="custom-datetime">
+      </ion-datetime>
+      
+      <ion-button 
+        expand="block" 
+        (click)="carregarDadosPorData(datetime)"
+        [disabled]="!datetime || carregandoHistorico"
+        class="historico-button">
+        <ion-icon name="search" slot="start"></ion-icon>
+        {{ carregandoHistorico ? 'Buscando...' : 'Buscar Histórico' }}
+      </ion-button>
+    </ion-card-content>
+  </ion-card>
+
+  <!-- Resultados do Histórico -->
+  <div *ngIf="dadosHistorico.length > 0" class="historico-resultados">
+    <div class="sensores-header">
+      <h2>Resultados do Histórico</h2>
+      <ion-badge color="secondary">{{ dadosHistorico.length }} registro(s)</ion-badge>
+    </div>
+
+    <ion-grid>
+      <ion-row>
+        <ion-col size="12" size-md="6" size-lg="4" *ngFor="let dado of dadosHistorico">
+          <ion-card class="sensor-card historico">
+            <ion-card-header>
+              <div class="sensor-header">
+                <ion-icon 
+                  [name]="getIconeSensor(dado.tipo || 'default')" 
+                  [color]="getCorSensor(dado.tipo || 'default')"
+                  class="sensor-icon-large">
+                </ion-icon>
+                <div>
+                  <ion-card-title>{{ dado.nome || dado.tipo || 'Sensor' }}</ion-card-title>
+                  <ion-card-subtitle>{{ formatarData(dado.timestamp || dado.data) }}</ion-card-subtitle>
+                </div>
+              </div>
+            </ion-card-header>
+            
+            <ion-card-content>
+              <div class="sensor-value">
+                <span class="value">{{ formatarData(dado.timestamp || dado.data) }}</span>
+              </div>
+
+              <!-- Propriedades adicionais do histórico -->
+              <ion-list class="sensor-details" lines="none">
+                <ion-item *ngFor="let prop of getPropriedadesCustomizadas(dado)">
+                  <ion-icon 
+                    [name]="getIconePropriedade(prop.chave)" 
+                    slot="start" 
+                    [color]="getCorPropriedade(prop.valor)">
+                  </ion-icon>
+                  <ion-label>
+                    <p>{{ prop.chave }}</p>
+                    <h3>{{ prop.valor }}</h3>
+                  </ion-label>
+                </ion-item>
+              </ion-list>
+            </ion-card-content>
+          </ion-card>
+        </ion-col>
+      </ion-row>
+    </ion-grid>
+  </div>
+
 </ion-content>

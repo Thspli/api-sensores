@@ -1,0 +1,728 @@
+// Cores e variáveis
+:root {
+  --card-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  --card-shadow-hover: 0 8px 24px rgba(0, 0, 0, 0.12);
+  --border-radius: 16px;
+  --transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+// Background animado
+ion-content {
+  --background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  position: relative;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 300px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    z-index: 0;
+    opacity: 0.95;
+    pointer-events: none;
+  }
+
+  // Partículas flutuantes
+  &::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 300px;
+    background-image: 
+      radial-gradient(circle at 20% 50%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
+      radial-gradient(circle at 80% 80%, rgba(255, 255, 255, 0.08) 0%, transparent 50%),
+      radial-gradient(circle at 40% 20%, rgba(255, 255, 255, 0.06) 0%, transparent 50%);
+    z-index: 1;
+    animation: floatParticles 20s ease-in-out infinite;
+    pointer-events: none;
+  }
+}
+
+@keyframes floatParticles {
+  0%, 100% { 
+    transform: translateY(0) scale(1);
+    opacity: 0.6;
+  }
+  50% { 
+    transform: translateY(-20px) scale(1.05);
+    opacity: 0.8;
+  }
+}
+
+// Toolbar personalizado
+ion-toolbar {
+  --background: transparent;
+  --border-width: 0;
+  --padding-top: 12px;
+  --padding-bottom: 12px;
+
+  ion-title {
+    font-weight: 700;
+    font-size: 24px;
+    letter-spacing: -0.5px;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+}
+
+// Container principal
+.ion-padding {
+  position: relative;
+  z-index: 10;
+  padding-top: 24px !important;
+}
+
+// Status Card com animação de entrada
+.status-card {
+  border-radius: var(--border-radius);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+  margin-bottom: 24px;
+  background: rgba(255, 255, 255, 0.98);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  animation: slideDown 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+  position: relative;
+  z-index: 10;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+    animation: shimmer 3s infinite;
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  ion-card-content {
+    padding: 24px;
+    position: relative;
+    z-index: 2;
+  }
+
+  .status-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 20px;
+    position: relative;
+    z-index: 2;
+  }
+
+  .status-info {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex: 1;
+    min-width: 250px;
+
+    .status-icon {
+      font-size: 56px;
+      animation: rotate 3s linear infinite;
+      filter: drop-shadow(0 4px 8px rgba(102, 126, 234, 0.3));
+    }
+
+    h3 {
+      margin: 0;
+      font-size: 20px;
+      font-weight: 700;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .ultima-atualizacao {
+      margin: 6px 0 0 0;
+      color: #64748b;
+      font-size: 13px;
+      font-weight: 500;
+    }
+  }
+
+  .status-actions {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    position: relative;
+    z-index: 2;
+
+    ion-button {
+      --box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+      font-weight: 600;
+      transition: var(--transition);
+      position: relative;
+      z-index: 2;
+
+      &:hover {
+        transform: translateY(-2px);
+        --box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+      }
+
+      &:active {
+        transform: translateY(0);
+      }
+    }
+  }
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    left: -100%;
+  }
+  100% {
+    left: 100%;
+  }
+}
+
+@keyframes rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+// Headers com animação
+.sensores-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 32px 0 20px 0;
+  padding: 0 4px;
+  animation: fadeIn 0.8s ease-out;
+
+  h2 {
+    margin: 0;
+    font-size: 26px;
+    font-weight: 700;
+    color: #ffffff;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    letter-spacing: -0.5px;
+  }
+
+  ion-badge {
+    animation: popIn 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes popIn {
+  0% {
+    opacity: 0;
+    transform: scale(0);
+  }
+  80% {
+    transform: scale(1.1);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+// Sensor Cards - Design Premium
+.sensor-card {
+  border-radius: var(--border-radius);
+  box-shadow: var(--card-shadow);
+  transition: var(--transition);
+  height: 100%;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.98);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  position: relative;
+  animation: cardSlideIn 0.6s cubic-bezier(0.4, 0, 0.2, 1) backwards;
+  z-index: 5;
+
+  // Efeito de brilho no hover
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+    opacity: 0;
+    transition: var(--transition);
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  &:hover {
+    box-shadow: var(--card-shadow-hover);
+    transform: translateY(-8px) scale(1.02);
+    border-color: rgba(102, 126, 234, 0.3);
+
+    &::before {
+      opacity: 1;
+    }
+
+    .sensor-icon-large {
+      transform: scale(1.15) rotate(5deg);
+    }
+
+    .sensor-value .value {
+      transform: scale(1.05);
+      color: #5a67d8;
+    }
+  }
+
+  &.historico {
+    border-left: 4px solid var(--ion-color-secondary);
+    animation-delay: 0.1s;
+  }
+
+  ion-card-header {
+    padding: 20px;
+    background: linear-gradient(to bottom, rgba(102, 126, 234, 0.03), transparent);
+    position: relative;
+    z-index: 2;
+  }
+
+  .sensor-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    position: relative;
+    z-index: 2;
+
+    .sensor-icon-large {
+      font-size: 48px;
+      flex-shrink: 0;
+      transition: var(--transition);
+      filter: drop-shadow(0 4px 8px rgba(102, 126, 234, 0.2));
+      animation: iconFloat 3s ease-in-out infinite;
+    }
+
+    ion-card-title {
+      font-size: 20px;
+      font-weight: 700;
+      margin: 0;
+      letter-spacing: -0.3px;
+      color: #1e293b;
+    }
+
+    ion-card-subtitle {
+      font-size: 13px;
+      margin-top: 6px;
+      font-weight: 500;
+      color: #64748b;
+    }
+  }
+
+  ion-card-content {
+    padding: 20px;
+    position: relative;
+    z-index: 2;
+  }
+
+  .sensor-value {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    padding: 24px 0;
+    border-bottom: 2px solid rgba(102, 126, 234, 0.1);
+    margin-bottom: 20px;
+
+    .value {
+      font-size: 42px;
+      font-weight: 800;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      transition: var(--transition);
+      letter-spacing: -1px;
+    }
+
+    .unit {
+      font-size: 20px;
+      color: #64748b;
+      font-weight: 600;
+    }
+  }
+
+  .sensor-details {
+    padding: 0;
+    margin: 0;
+
+    ion-item {
+      --padding-start: 0;
+      --inner-padding-end: 0;
+      --background: transparent;
+      font-size: 14px;
+      transition: var(--transition);
+
+      &:hover {
+        transform: translateX(4px);
+      }
+
+      ion-icon {
+        margin-right: 12px;
+        transition: var(--transition);
+      }
+
+      &:hover ion-icon {
+        transform: scale(1.2);
+      }
+
+      ion-label {
+        margin: 10px 0;
+
+        p {
+          font-size: 11px;
+          color: #94a3b8;
+          margin: 0 0 6px 0;
+          text-transform: uppercase;
+          letter-spacing: 0.8px;
+          font-weight: 600;
+        }
+
+        h3 {
+          font-size: 15px;
+          font-weight: 600;
+          margin: 0;
+          color: #334155;
+        }
+      }
+    }
+  }
+}
+
+@keyframes cardSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes iconFloat {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
+}
+
+// Adicionar delays para os cards
+.sensor-card:nth-child(1) { animation-delay: 0.1s; }
+.sensor-card:nth-child(2) { animation-delay: 0.2s; }
+.sensor-card:nth-child(3) { animation-delay: 0.3s; }
+.sensor-card:nth-child(4) { animation-delay: 0.4s; }
+.sensor-card:nth-child(5) { animation-delay: 0.5s; }
+.sensor-card:nth-child(6) { animation-delay: 0.6s; }
+
+// Animação de pulse suave
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.9;
+    transform: scale(0.98);
+  }
+}
+
+.pulse {
+  animation: pulse 2s ease-in-out infinite;
+}
+
+// Empty State
+.empty-state {
+  text-align: center;
+  padding: 64px 32px;
+  border-radius: var(--border-radius);
+  box-shadow: var(--card-shadow);
+  background: rgba(255, 255, 255, 0.98);
+  backdrop-filter: blur(10px);
+  animation: fadeIn 0.8s ease-out;
+
+  .empty-icon {
+    font-size: 96px;
+    color: #cbd5e1;
+    margin-bottom: 24px;
+    animation: float 3s ease-in-out infinite;
+  }
+
+  h2 {
+    font-size: 24px;
+    color: #334155;
+    margin: 0 0 12px 0;
+    font-weight: 700;
+  }
+
+  p {
+    color: #64748b;
+    margin: 0;
+    font-size: 16px;
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-15px);
+  }
+}
+
+// Histórico Card
+.historico-card {
+  border-radius: var(--border-radius);
+  box-shadow: var(--card-shadow);
+  margin-top: 40px;
+  background: rgba(255, 255, 255, 0.98);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  animation: slideUp 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: var(--transition);
+  position: relative;
+  z-index: 5;
+
+  &:hover {
+    box-shadow: var(--card-shadow-hover);
+    transform: translateY(-4px);
+  }
+
+  ion-card-header {
+    background: linear-gradient(to right, rgba(102, 126, 234, 0.05), transparent);
+    padding: 20px;
+    position: relative;
+    z-index: 2;
+  }
+
+  ion-card-title {
+    font-weight: 700;
+    font-size: 20px;
+    color: #1e293b;
+  }
+
+  ion-card-content {
+    position: relative;
+    z-index: 2;
+  }
+
+  .custom-datetime {
+    margin: 20px 0;
+    border-radius: 12px;
+    background: rgba(102, 126, 234, 0.05);
+    padding: 12px;
+    border: 2px solid rgba(102, 126, 234, 0.1);
+    transition: var(--transition);
+
+    &:hover {
+      border-color: rgba(102, 126, 234, 0.3);
+      background: rgba(102, 126, 234, 0.08);
+    }
+  }
+
+  .historico-button {
+    margin-top: 20px;
+    --border-radius: 12px;
+    font-weight: 700;
+    --box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    transition: var(--transition);
+
+    &:hover {
+      transform: translateY(-2px);
+      --box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+    }
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// Histórico Resultados
+.historico-resultados {
+  margin-top: 40px;
+  padding-top: 32px;
+  border-top: 2px solid rgba(255, 255, 255, 0.3);
+  animation: fadeIn 0.8s ease-out;
+}
+
+// Spinner com estilo
+.spinner-center {
+  display: block;
+  margin: 64px auto;
+  transform: scale(1.8);
+  --color: #667eea;
+  filter: drop-shadow(0 4px 8px rgba(102, 126, 234, 0.3));
+  animation: spinnerPulse 2s ease-in-out infinite;
+}
+
+@keyframes spinnerPulse {
+  0%, 100% {
+    transform: scale(1.8);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(2);
+    opacity: 0.8;
+  }
+}
+
+// Badges premium
+ion-badge {
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-weight: 700;
+  font-size: 13px;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+  letter-spacing: 0.3px;
+}
+
+// Botões premium
+ion-button {
+  --border-radius: 12px;
+  font-weight: 700;
+  text-transform: none;
+  letter-spacing: 0.3px;
+  
+  ion-icon {
+    margin-right: 8px;
+    transition: var(--transition);
+  }
+
+  &:hover ion-icon {
+    transform: rotate(15deg) scale(1.1);
+  }
+}
+
+// Grid spacing
+ion-grid {
+  padding: 0;
+  
+  ion-row {
+    margin: -12px;
+    
+    ion-col {
+      padding: 12px;
+    }
+  }
+}
+
+// Scrollbar personalizado
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(102, 126, 234, 0.5);
+  border-radius: 4px;
+  
+  &:hover {
+    background: rgba(102, 126, 234, 0.7);
+  }
+}
+
+// Responsividade premium
+@media (max-width: 768px) {
+  .status-content {
+    flex-direction: column;
+    align-items: flex-start !important;
+
+    .status-info {
+      width: 100%;
+    }
+
+    .status-actions {
+      width: 100%;
+
+      ion-button {
+        flex: 1;
+      }
+    }
+  }
+
+  .sensor-value {
+    .value {
+      font-size: 36px !important;
+    }
+
+    .unit {
+      font-size: 18px !important;
+    }
+  }
+
+  .sensores-header {
+    h2 {
+      font-size: 22px;
+    }
+  }
+
+  .sensor-card {
+    &:hover {
+      transform: translateY(-4px) scale(1.01);
+    }
+  }
+}
+
+// Tema escuro suave
+@media (prefers-color-scheme: dark) {
+  ion-content {
+    --background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  }
+
+  .sensor-card,
+  .status-card,
+  .historico-card {
+    background: rgba(30, 30, 46, 0.95);
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+
+  .sensores-header h2 {
+    color: #ffffff;
+  }
+}
