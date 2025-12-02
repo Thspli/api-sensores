@@ -1,0 +1,95 @@
+<ion-header [translucent]="true">
+    <ion-toolbar color="primary">
+      <ion-title>
+        <ion-icon name="calendar" style="vertical-align: middle; margin-right: 8px;"></ion-icon>
+        Calendário
+      </ion-title>
+    </ion-toolbar>
+  </ion-header>
+  
+  <ion-content [fullscreen]="true" class="ion-padding">
+    
+    <!-- Seletor de Data -->
+    <ion-card class="calendario-card">
+      <ion-card-header>
+        <ion-card-title>Selecione uma Data</ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        <ion-datetime 
+          presentation="date" 
+          [(ngModel)]="dataSelecionada"
+          locale="pt-BR"
+          [max]="dataMaxima"
+          (ionChange)="onDataSelecionada()"
+          class="custom-datetime">
+        </ion-datetime>
+      </ion-card-content>
+    </ion-card>
+  
+    <!-- Loading -->
+    <ion-spinner *ngIf="carregando" name="crescent" class="spinner-center"></ion-spinner>
+  
+    <!-- Resultados -->
+    <div *ngIf="!carregando && dadosDia.length > 0" class="resultados">
+      <div class="resultados-header">
+        <h2>Dados de {{ formatarDataTitulo(dataSelecionada) }}</h2>
+        <ion-badge color="secondary">{{ dadosDia.length }} registro(s)</ion-badge>
+      </div>
+  
+      <ion-grid>
+        <ion-row>
+          <ion-col size="12" size-md="6" size-lg="4" *ngFor="let dado of dadosDia">
+            <ion-card class="sensor-card">
+              <ion-card-header>
+                <div class="sensor-header">
+                  <ion-icon 
+                    [name]="getIconeSensor(dado.tipo || 'default')" 
+                    [color]="getCorSensor(dado.tipo || 'default')"
+                    class="sensor-icon-large">
+                  </ion-icon>
+                  <div>
+                    <ion-card-title>{{ dado.nome || dado.tipo || 'Sensor' }}</ion-card-title>
+                    <ion-card-subtitle>{{ formatarData(dado.timestamp || dado.data) }}</ion-card-subtitle>
+                  </div>
+                </div>
+              </ion-card-header>
+              
+              <ion-card-content>
+                <ion-list class="sensor-details" lines="none">
+                  <ion-item *ngFor="let prop of getPropriedadesCustomizadas(dado)">
+                    <ion-icon 
+                      [name]="getIconePropriedade(prop.chave)" 
+                      slot="start" 
+                      [color]="getCorPropriedade(prop.valor)">
+                    </ion-icon>
+                    <ion-label>
+                      <p>{{ prop.chave }}</p>
+                      <h3>{{ prop.valor }}</h3>
+                    </ion-label>
+                  </ion-item>
+                </ion-list>
+              </ion-card-content>
+            </ion-card>
+          </ion-col>
+        </ion-row>
+      </ion-grid>
+    </div>
+  
+    <!-- Empty State -->
+    <ion-card *ngIf="!carregando && dadosDia.length === 0 && dataSelecionada" class="empty-state">
+      <ion-card-content>
+        <ion-icon name="calendar-clear-outline" class="empty-icon"></ion-icon>
+        <h2>Nenhum registro encontrado</h2>
+        <p>Não há dados para a data selecionada</p>
+      </ion-card-content>
+    </ion-card>
+  
+    <ion-card *ngIf="!dataSelecionada && !carregando" class="empty-state">
+      <ion-card-content>
+        <ion-icon name="calendar-outline" class="empty-icon"></ion-icon>
+        <h2>Selecione uma data</h2>
+        <p>Escolha uma data acima para visualizar os registros</p>
+      </ion-card-content>
+    </ion-card>
+  
+  </ion-content>
