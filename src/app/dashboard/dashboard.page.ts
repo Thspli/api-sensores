@@ -13,6 +13,9 @@ export class DashboardPage implements OnInit, OnDestroy {
 
   public datetime!: string;
   public dadosSensores: any[] = [];
+  public registroMaisRecente: any = null;
+  public outrosRegistros: any[] = [];
+  public registroExpandido: number | null = null; // Index do registro expandido
   public dadosHistorico: any[] = [];
   public ultimaAtualizacao?: Date;
   public dataMaxima: string = new Date().toISOString();
@@ -43,7 +46,7 @@ export class DashboardPage implements OnInit, OnDestroy {
         )
         .subscribe({
           next: (data) => {
-            this.dadosSensores = data;
+            this.processarDados(data);
             this.ultimaAtualizacao = new Date();
             console.log('Dados atualizados automaticamente:', data);
           },
@@ -75,7 +78,7 @@ export class DashboardPage implements OnInit, OnDestroy {
     this.carregando = true;
     this.apiService.getSensores().subscribe({
       next: (data) => {
-        this.dadosSensores = data;
+        this.processarDados(data);
         this.ultimaAtualizacao = new Date();
         this.carregando = false;
         console.log('Dados carregados:', data);
@@ -85,6 +88,41 @@ export class DashboardPage implements OnInit, OnDestroy {
         this.carregando = false;
       }
     });
+  }
+
+  // Processar dados: separar o mais recente dos outros
+  processarDados(data: any[]): void {
+    this.dadosSensores = data;
+    
+    if (data && data.length > 0) {
+      // Ordenar por timestamp (mais recente primeiro)
+      const dadosOrdenados = [...data].sort((a, b) => {
+        const dataA = new Date(a.timestamp || a.data).getTime();
+        const dataB = new Date(b.timestamp || b.data).getTime();
+        return dataB - dataA; // Decrescente (mais recente primeiro)
+      });
+
+      // Separar o mais recente
+      this.registroMaisRecente = dadosOrdenados[0];
+      this.outrosRegistros = dadosOrdenados.slice(1);
+    } else {
+      this.registroMaisRecente = null;
+      this.outrosRegistros = [];
+    }
+  }
+
+  // Toggle expansão de um registro
+  toggleRegistro(index: number): void {
+    if (this.registroExpandido === index) {
+      this.registroExpandido = null; // Colapsar se já estiver expandido
+    } else {
+      this.registroExpandido = index; // Expandir novo registro
+    }
+  }
+
+  // Verificar se registro está expandido
+  isExpandido(index: number): boolean {
+    return this.registroExpandido === index;
   }
 
   carregarDadosPorData(dataSelecionada: string): void {
@@ -107,19 +145,27 @@ export class DashboardPage implements OnInit, OnDestroy {
     });
   }
 
-  // Método para extrair valor de propriedades dos sensores
   getValorSensor(sensor: any, propriedade: string): any {
     return sensor[propriedade] || 'N/A';
   }
 
-  // Método para formatar timestamp
   formatarData(timestamp: string): string {
     if (!timestamp) return 'N/A';
     const data = new Date(timestamp);
     return data.toLocaleString('pt-BR');
   }
 
-  // Método para obter propriedades customizadas do sensor (excluindo campos padrão)
+  formatarDataCompacta(timestamp: string): string {
+    if (!timestamp) return 'N/A';
+    const data = new Date(timestamp);
+    return data.toLocaleString('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  }
+
   getPropriedadesCustomizadas(sensor: any): Array<{chave: string, valor: any}> {
     const camposPadrao = ['id', '_id', 'nome', 'tipo', 'localizacao', 'timestamp', 'data', 'status', 'unidade', 'valor'];
     const propriedades: Array<{chave: string, valor: any}> = [];
@@ -136,7 +182,6 @@ export class DashboardPage implements OnInit, OnDestroy {
     return propriedades;
   }
 
-  // Formatar nome da propriedade de snake_case para título
   formatarNomePropriedade(chave: string): string {
     return chave
       .split('_')
@@ -144,7 +189,6 @@ export class DashboardPage implements OnInit, OnDestroy {
       .join(' ');
   }
 
-  // Formatar valor da propriedade
   formatarValorPropriedade(valor: any): string {
     if (typeof valor === 'boolean') {
       return valor ? 'Ativo' : 'Inativo';
@@ -155,7 +199,6 @@ export class DashboardPage implements OnInit, OnDestroy {
     return String(valor);
   }
 
-  // Obter ícone para propriedade customizada
   getIconePropriedade(chave: string): string {
     const chaveLower = chave.toLowerCase();
     if (chaveLower.includes('temperatura')) return 'thermometer-outline';
@@ -167,7 +210,6 @@ export class DashboardPage implements OnInit, OnDestroy {
     return 'information-circle-outline';
   }
 
-  // Obter cor para propriedade customizada
   getCorPropriedade(valor: any): string {
     if (typeof valor === 'boolean') {
       return valor ? 'success' : 'danger';
@@ -175,7 +217,6 @@ export class DashboardPage implements OnInit, OnDestroy {
     return 'primary';
   }
 
-  // Método para obter ícone baseado no tipo de sensor
   getIconeSensor(tipo: string): string {
     const icones: any = {
       temperatura: 'thermometer-outline',
@@ -188,7 +229,6 @@ export class DashboardPage implements OnInit, OnDestroy {
     return icones[tipo?.toLowerCase()] || icones.default;
   }
 
-  // Método para obter cor baseada no tipo de sensor
   getCorSensor(tipo: string): string {
     const cores: any = {
       temperatura: 'danger',

@@ -58,114 +58,241 @@
     </ion-card-content>
   </ion-card>
 
-  <!-- Grid de Sensores -->
-  <div class="sensores-header">
-    <h2>Leituras Atuais</h2>
-    <ion-badge *ngIf="dadosSensores.length > 0" color="primary">
-      {{ dadosSensores.length }} sensor(es)
-    </ion-badge>
+  <!-- Loading Spinner -->
+  <ion-spinner *ngIf="carregando && !registroMaisRecente" name="crescent" class="spinner-center"></ion-spinner>
+
+  <!-- REGISTRO MAIS RECENTE (DESTACADO) -->
+  <div *ngIf="registroMaisRecente && !carregando" class="registro-destaque-container">
+    <div class="sensores-header">
+      <h2>
+        <ion-icon name="sparkles-outline"></ion-icon>
+        Registro Mais Recente
+      </h2>
+      <ion-badge color="success">Atual</ion-badge>
+    </div>
+
+    <ion-card class="sensor-card destaque">
+      <!-- Header do Card -->
+      <ion-card-header>
+        <div class="sensor-header">
+          <div class="sensor-info">
+            <div class="icon-wrapper">
+              <ion-icon 
+                [name]="getIconeSensor(registroMaisRecente.tipo || 'default')" 
+                [color]="getCorSensor(registroMaisRecente.tipo || 'default')"
+                class="sensor-icon-large">
+              </ion-icon>
+            </div>
+            <div class="sensor-text">
+              <ion-card-title>{{ registroMaisRecente.nome || registroMaisRecente.tipo || 'Sensor' }}</ion-card-title>
+              <ion-card-subtitle *ngIf="registroMaisRecente.localizacao">
+                <ion-icon name="location-outline"></ion-icon>
+                {{ registroMaisRecente.localizacao }}
+              </ion-card-subtitle>
+            </div>
+          </div>
+          
+          <!-- Badge de Status -->
+          <div class="status-badge" [class]="registroMaisRecente.status || 'ativo'">
+            <ion-icon name="ellipse"></ion-icon>
+            {{ registroMaisRecente.status || 'Ativo' }}
+          </div>
+        </div>
+      </ion-card-header>
+      
+      <!-- Conteúdo do Card -->
+      <ion-card-content>
+        
+        <!-- Timestamp -->
+        <div class="sensor-timestamp">
+          <ion-icon name="time-outline"></ion-icon>
+          <span>{{ formatarData(registroMaisRecente.timestamp || registroMaisRecente.data) }}</span>
+        </div>
+        
+        <!-- Grid de Medições -->
+        <div class="medicoes-grid">
+          
+          <!-- Turbidez -->
+          <div class="medicao-item" [class.indisponivel]="!registroMaisRecente.turbidez">
+            <div class="medicao-header">
+              <ion-icon name="contrast-outline" color="warning"></ion-icon>
+              <span class="medicao-label">Turbidez</span>
+            </div>
+            <div class="medicao-valor">
+              <span *ngIf="registroMaisRecente.turbidez">{{ registroMaisRecente.turbidez }}<span class="unidade">NTU</span></span>
+              <span *ngIf="!registroMaisRecente.turbidez">N/D</span>
+            </div>
+          </div>
+          
+          <!-- pH -->
+          <div class="medicao-item" [class.indisponivel]="!registroMaisRecente.ph">
+            <div class="medicao-header">
+              <ion-icon name="flask-outline" color="success"></ion-icon>
+              <span class="medicao-label">pH</span>
+            </div>
+            <div class="medicao-valor">
+              <span *ngIf="registroMaisRecente.ph">{{ registroMaisRecente.ph }}<span class="unidade">pH</span></span>
+              <span *ngIf="!registroMaisRecente.ph">N/D</span>
+            </div>
+          </div>
+          
+          <!-- Cloro -->
+          <div class="medicao-item" [class.indisponivel]="!registroMaisRecente.cloro">
+            <div class="medicao-header">
+              <ion-icon name="beaker-outline" color="tertiary"></ion-icon>
+              <span class="medicao-label">Cloro</span>
+            </div>
+            <div class="medicao-valor">
+              <span *ngIf="registroMaisRecente.cloro">{{ registroMaisRecente.cloro }}<span class="unidade">mg/L</span></span>
+              <span *ngIf="!registroMaisRecente.cloro">N/D</span>
+            </div>
+          </div>
+          
+          <!-- Nível da Água -->
+          <div class="medicao-item" [class.indisponivel]="!registroMaisRecente.nivel_agua">
+            <div class="medicao-header">
+              <ion-icon name="analytics-outline" color="secondary"></ion-icon>
+              <span class="medicao-label">Nível Água</span>
+            </div>
+            <div class="medicao-valor">
+              <span *ngIf="registroMaisRecente.nivel_agua">{{ registroMaisRecente.nivel_agua }}<span class="unidade">cm</span></span>
+              <span *ngIf="!registroMaisRecente.nivel_agua">N/D</span>
+            </div>
+          </div>
+          
+        </div>
+        
+      </ion-card-content>
+    </ion-card>
   </div>
 
-  <ion-spinner *ngIf="carregando && dadosSensores.length === 0" name="crescent" class="spinner-center"></ion-spinner>
+  <!-- TABELA DE OUTROS REGISTROS -->
+  <div *ngIf="outrosRegistros.length > 0 && !carregando" class="outros-registros-container">
+    <div class="sensores-header">
+      <h2>
+        <ion-icon name="list-outline"></ion-icon>
+        Registros Anteriores
+      </h2>
+      <ion-badge color="primary">{{ outrosRegistros.length }} registro(s)</ion-badge>
+    </div>
 
-  <ion-grid *ngIf="!carregando || dadosSensores.length > 0">
-    <ion-row>
-      <ion-col size="12" size-md="6" size-lg="4" *ngFor="let sensor of dadosSensores">
-        <ion-card class="sensor-card">
+    <!-- Tabela Compacta -->
+    <ion-card class="tabela-registros">
+      <ion-list lines="none">
+        <ion-item 
+          *ngFor="let registro of outrosRegistros; let i = index" 
+          class="registro-item"
+          [class.expandido]="isExpandido(i)"
+          button
+          (click)="toggleRegistro(i)">
           
-          <!-- Header do Card -->
-          <ion-card-header>
-            <div class="sensor-header">
-              <div class="sensor-info">
-                <ion-icon 
-                  [name]="getIconeSensor(sensor.tipo || 'default')" 
-                  [color]="getCorSensor(sensor.tipo || 'default')"
-                  class="sensor-icon-large">
-                </ion-icon>
-                <div class="sensor-text">
-                  <ion-card-title>{{ sensor.nome || sensor.tipo || 'Sensor' }}</ion-card-title>
-                  <ion-card-subtitle *ngIf="sensor.localizacao">
-                    <ion-icon name="location-outline"></ion-icon>
-                    {{ sensor.localizacao }}
-                  </ion-card-subtitle>
-                </div>
-              </div>
-              
-              <!-- Badge de Status -->
-              <div class="status-badge" [class]="sensor.status || 'ativo'">
-                {{ sensor.status || 'Ativo' }}
+          <!-- Visualização Compacta (sempre visível) -->
+          <div class="registro-compacto">
+            <div class="registro-info-basica">
+              <ion-icon 
+                [name]="getIconeSensor(registro.tipo || 'default')" 
+                [color]="getCorSensor(registro.tipo || 'default')"
+                class="registro-icon">
+              </ion-icon>
+              <div class="registro-texto">
+                <h3>{{ registro.nome || registro.tipo || 'Sensor' }}</h3>
+                <p>{{ formatarDataCompacta(registro.timestamp || registro.data) }}</p>
               </div>
             </div>
-          </ion-card-header>
-          
-          <!-- Conteúdo do Card -->
-          <ion-card-content>
             
-            <!-- Timestamp -->
-            <div class="sensor-timestamp">
+            <!-- Valores Rápidos -->
+            <div class="valores-rapidos">
+              <span *ngIf="registro.turbidez" class="valor-badge turbidez">
+                <ion-icon name="contrast-outline"></ion-icon>
+                {{ registro.turbidez }}
+              </span>
+              <span *ngIf="registro.ph" class="valor-badge ph">
+                <ion-icon name="flask-outline"></ion-icon>
+                {{ registro.ph }}
+              </span>
+              <span *ngIf="registro.cloro" class="valor-badge cloro">
+                <ion-icon name="beaker-outline"></ion-icon>
+                {{ registro.cloro }}
+              </span>
+            </div>
+
+            <!-- Ícone de expandir -->
+            <ion-icon 
+              [name]="isExpandido(i) ? 'chevron-up-outline' : 'chevron-down-outline'" 
+              class="expand-icon">
+            </ion-icon>
+          </div>
+
+          <!-- Visualização Expandida (condicional) -->
+          <div class="registro-expandido" *ngIf="isExpandido(i)">
+            <div class="divider"></div>
+            
+            <!-- Status e Localização -->
+            <div class="info-adicional">
+              <div class="status-badge" [class]="registro.status || 'ativo'">
+                <ion-icon name="ellipse"></ion-icon>
+                {{ registro.status || 'Ativo' }}
+              </div>
+              <span *ngIf="registro.localizacao" class="localizacao">
+                <ion-icon name="location-outline"></ion-icon>
+                {{ registro.localizacao }}
+              </span>
+            </div>
+
+            <!-- Timestamp Completo -->
+            <div class="timestamp-completo">
               <ion-icon name="time-outline"></ion-icon>
-              <span>{{ formatarData(sensor.timestamp || sensor.data) }}</span>
+              <span>{{ formatarData(registro.timestamp || registro.data) }}</span>
             </div>
-            
-            <!-- Grid de Medições -->
-            <div class="medicoes-grid">
+
+            <!-- Grid de Medições Detalhado -->
+            <div class="medicoes-grid-expandido">
               
               <!-- Turbidez -->
-              <div class="medicao-item" [class.indisponivel]="!sensor.turbidez">
-                <div class="medicao-header">
-                  <ion-icon name="contrast-outline" color="warning"></ion-icon>
-                  <span class="medicao-label">Turbidez</span>
-                </div>
-                <div class="medicao-valor">
-                  <span *ngIf="sensor.turbidez">{{ sensor.turbidez }}<span class="unidade">NTU</span></span>
-                  <span *ngIf="!sensor.turbidez">N/D</span>
+              <div class="medicao-item-expandido" *ngIf="registro.turbidez">
+                <ion-icon name="contrast-outline" color="warning"></ion-icon>
+                <div class="medicao-detalhes">
+                  <span class="label">Turbidez</span>
+                  <span class="valor">{{ registro.turbidez }} <span class="unidade">NTU</span></span>
                 </div>
               </div>
               
               <!-- pH -->
-              <div class="medicao-item" [class.indisponivel]="!sensor.ph">
-                <div class="medicao-header">
-                  <ion-icon name="flask-outline" color="success"></ion-icon>
-                  <span class="medicao-label">pH</span>
-                </div>
-                <div class="medicao-valor">
-                  <span *ngIf="sensor.ph">{{ sensor.ph }}<span class="unidade">pH</span></span>
-                  <span *ngIf="!sensor.ph">N/D</span>
+              <div class="medicao-item-expandido" *ngIf="registro.ph">
+                <ion-icon name="flask-outline" color="success"></ion-icon>
+                <div class="medicao-detalhes">
+                  <span class="label">pH</span>
+                  <span class="valor">{{ registro.ph }} <span class="unidade">pH</span></span>
                 </div>
               </div>
               
               <!-- Cloro -->
-              <div class="medicao-item" [class.indisponivel]="!sensor.cloro">
-                <div class="medicao-header">
-                  <ion-icon name="beaker-outline" color="tertiary"></ion-icon>
-                  <span class="medicao-label">Cloro</span>
-                </div>
-                <div class="medicao-valor">
-                  <span *ngIf="sensor.cloro">{{ sensor.cloro }}<span class="unidade">mg/L</span></span>
-                  <span *ngIf="!sensor.cloro">N/D</span>
+              <div class="medicao-item-expandido" *ngIf="registro.cloro">
+                <ion-icon name="beaker-outline" color="tertiary"></ion-icon>
+                <div class="medicao-detalhes">
+                  <span class="label">Cloro</span>
+                  <span class="valor">{{ registro.cloro }} <span class="unidade">mg/L</span></span>
                 </div>
               </div>
               
-              <!-- Nível da Água -->
-              <div class="medicao-item" [class.indisponivel]="!sensor.nivel_agua">
-                <div class="medicao-header">
-                  <ion-icon name="analytics-outline" color="secondary"></ion-icon>
-                  <span class="medicao-label">Nível Água</span>
-                </div>
-                <div class="medicao-valor">
-                  <span *ngIf="sensor.nivel_agua">{{ sensor.nivel_agua }}<span class="unidade">cm</span></span>
-                  <span *ngIf="!sensor.nivel_agua">N/D</span>
+              <!-- Nível Água -->
+              <div class="medicao-item-expandido" *ngIf="registro.nivel_agua">
+                <ion-icon name="analytics-outline" color="secondary"></ion-icon>
+                <div class="medicao-detalhes">
+                  <span class="label">Nível Água</span>
+                  <span class="valor">{{ registro.nivel_agua }} <span class="unidade">cm</span></span>
                 </div>
               </div>
               
             </div>
-            
-          </ion-card-content>
-        </ion-card>
-      </ion-col>
-    </ion-row>
-  </ion-grid>
+          </div>
+          
+        </ion-item>
+      </ion-list>
+    </ion-card>
+  </div>
 
+  <!-- Empty State -->
   <ion-card *ngIf="!carregando && dadosSensores.length === 0" class="empty-state">
     <ion-card-content>
       <ion-icon name="cube-outline" class="empty-icon"></ion-icon>
@@ -175,4 +302,4 @@
   </ion-card>
 
   </div>
-</ion-content>
+</ion-content> 
