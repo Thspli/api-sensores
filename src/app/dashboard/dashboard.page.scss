@@ -688,6 +688,7 @@ ion-content {
       // Visualização Expandida
       .registro-expandido {
         padding: 0 20px 20px 20px;
+        overflow: hidden;
         animation: expandDown 0.3s ease;
 
         .divider {
@@ -806,6 +807,11 @@ ion-content {
           }
         }
       }
+
+      // Animação de colapsar
+      &.colapsando .registro-expandido {
+        animation: collapseUp 0.3s ease forwards;
+      }
     }
   }
 }
@@ -814,10 +820,26 @@ ion-content {
   from {
     opacity: 0;
     max-height: 0;
+    transform: translateY(-10px);
   }
   to {
     opacity: 1;
     max-height: 500px;
+    transform: translateY(0);
+  }
+}
+
+@keyframes collapseUp {
+  from {
+    opacity: 1;
+    max-height: 500px;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    max-height: 0;
+    transform: translateY(-10px);
+    padding: 0 20px 0 20px;
   }
 }
 
@@ -951,4 +973,3 @@ ion-content {
     grid-template-columns: 1fr !important;
   }
 }
-

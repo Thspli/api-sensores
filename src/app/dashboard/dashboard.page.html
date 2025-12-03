@@ -7,7 +7,7 @@
         <div class="header-title">
           <ion-icon name="water"></ion-icon>
           <div>
-            <h1>Dashboard de Sensores</h1>
+            <h1>Dados dos Sensores</h1>
             <p>Monitoramento em tempo real</p>
           </div>
         </div>
@@ -183,6 +183,7 @@
           *ngFor="let registro of outrosRegistros; let i = index" 
           class="registro-item"
           [class.expandido]="isExpandido(i)"
+          [class.colapsando]="isColapsando(i)"
           button
           (click)="toggleRegistro(i)">
           
