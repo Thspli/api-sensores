@@ -10,19 +10,8 @@ const routes: Routes = [
   {
     path: 'tabs',
     loadChildren: () => import('./tabs/tabs.module').then(m => m.TabsPageModule)
-  },
-  {
-    path: 'dashboard',
-    loadChildren: () => import('./dashboard/dashboard.module').then( m => m.DashboardPageModule)
-  },
-  {
-    path: 'calendario',
-    loadChildren: () => import('./calendario/calendario.module').then( m => m.CalendarioPageModule)
-  },
-  {
-    path: 'graficos',
-    loadChildren: () => import('./graficos/graficos.module').then( m => m.GraficosPageModule)
-  },
+  }
+  // 👈 REMOVEU TUDO ABAIXO (dashboard, calendario, graficos)
 ];
 
 @NgModule({
