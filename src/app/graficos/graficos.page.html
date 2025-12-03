@@ -1,83 +1,204 @@
-<ion-header [translucent]="true">
-    <ion-toolbar color="primary">
-      <ion-title>
-        <ion-icon name="analytics" style="vertical-align: middle; margin-right: 8px;"></ion-icon>
-        Gráficos
-      </ion-title>
-    </ion-toolbar>
-  </ion-header>
+<ion-content [fullscreen]="true">
   
-  <ion-content [fullscreen]="true" class="ion-padding">
+  <div class="content-wrapper">
     
+    <!-- Header Personalizado -->
+    <div class="custom-header">
+      <div class="header-content">
+        <div class="header-title">
+          <ion-icon name="analytics"></ion-icon>
+          <div>
+            <h1>Gráficos e Análises</h1>
+            <p>Visualização de dados em tempo real</p>
+          </div>
+        </div>
+        <div class="header-badge">
+          <ion-icon name="bar-chart"></ion-icon>
+          <span>Analytics</span>
+        </div>
+      </div>
+    </div>
+  
+    <!-- Card de Info -->
     <ion-card class="info-card">
       <ion-card-content>
         <div class="info-content">
           <ion-icon name="information-circle" color="primary"></ion-icon>
-          <p>Página de gráficos em desenvolvimento. Em breve você poderá visualizar análises gráficas dos dados dos sensores.</p>
+          <div>
+            <p><strong>Visualização em tempo real dos dados dos sensores</strong></p>
+            <p class="subtitle">Os gráficos são atualizados automaticamente com as últimas leituras.</p>
+          </div>
         </div>
       </ion-card-content>
     </ion-card>
-  
+
+    <!-- Filtros de Período -->
+    <ion-card class="filter-card">
+      <ion-card-content>
+        <div class="filter-content">
+          <ion-segment [(ngModel)]="periodoSelecionado" (ionChange)="atualizarGraficos()">
+            <ion-segment-button value="24h">
+              <ion-label>24h</ion-label>
+            </ion-segment-button>
+            <ion-segment-button value="7d">
+              <ion-label>7 dias</ion-label>
+            </ion-segment-button>
+            <ion-segment-button value="30d">
+              <ion-label>30 dias</ion-label>
+            </ion-segment-button>
+          </ion-segment>
+          
+          <ion-button (click)="atualizarGraficos()" size="small" fill="outline">
+            <ion-icon name="refresh" slot="start"></ion-icon>
+            Atualizar
+          </ion-button>
+        </div>
+      </ion-card-content>
+    </ion-card>
+
+    <!-- Grid de Gráficos -->
     <div class="preview-grid">
-      <ion-card class="preview-card">
+      
+      <!-- Gráfico de Linha - Turbidez ao longo do tempo -->
+      <ion-card class="preview-card chart-card">
         <ion-card-header>
           <ion-card-title>
-            <ion-icon name="bar-chart-outline" color="primary"></ion-icon>
-            Gráfico de Barras
+            <ion-icon name="trending-up-outline" color="primary"></ion-icon>
+            Turbidez ao Longo do Tempo
           </ion-card-title>
+          <ion-card-subtitle>Medições em NTU</ion-card-subtitle>
         </ion-card-header>
         <ion-card-content>
-          <div class="placeholder-chart">
-            <ion-icon name="bar-chart-outline"></ion-icon>
-            <p>Em breve</p>
+          <div class="chart-container">
+            <canvas #turbidezChart></canvas>
           </div>
         </ion-card-content>
       </ion-card>
-  
-      <ion-card class="preview-card">
+
+      <!-- Gráfico de Linha - pH ao longo do tempo -->
+      <ion-card class="preview-card chart-card">
         <ion-card-header>
           <ion-card-title>
-            <ion-icon name="pie-chart-outline" color="secondary"></ion-icon>
-            Gráfico de Pizza
+            <ion-icon name="water-outline" color="success"></ion-icon>
+            pH ao Longo do Tempo
           </ion-card-title>
+          <ion-card-subtitle>Nível de pH</ion-card-subtitle>
         </ion-card-header>
         <ion-card-content>
-          <div class="placeholder-chart">
-            <ion-icon name="pie-chart-outline"></ion-icon>
-            <p>Em breve</p>
+          <div class="chart-container">
+            <canvas #phChart></canvas>
           </div>
         </ion-card-content>
       </ion-card>
-  
-      <ion-card class="preview-card">
+
+      <!-- Gráfico de Barras - Comparação de Sensores -->
+      <ion-card class="preview-card chart-card">
         <ion-card-header>
           <ion-card-title>
-            <ion-icon name="trending-up-outline" color="success"></ion-icon>
-            Gráfico de Linha
+            <ion-icon name="bar-chart-outline" color="secondary"></ion-icon>
+            Comparação de Sensores
           </ion-card-title>
+          <ion-card-subtitle>Média das últimas leituras</ion-card-subtitle>
         </ion-card-header>
         <ion-card-content>
-          <div class="placeholder-chart">
-            <ion-icon name="trending-up-outline"></ion-icon>
-            <p>Em breve</p>
+          <div class="chart-container">
+            <canvas #comparacaoChart></canvas>
           </div>
         </ion-card-content>
       </ion-card>
-  
-      <ion-card class="preview-card">
+
+      <!-- Gráfico de Rosca - Distribuição do Cloro -->
+      <ion-card class="preview-card chart-card">
         <ion-card-header>
           <ion-card-title>
-            <ion-icon name="stats-chart-outline" color="warning"></ion-icon>
-            Estatísticas
+            <ion-icon name="pie-chart-outline" color="warning"></ion-icon>
+            Níveis de Cloro
           </ion-card-title>
+          <ion-card-subtitle>Distribuição percentual</ion-card-subtitle>
         </ion-card-header>
         <ion-card-content>
-          <div class="placeholder-chart">
-            <ion-icon name="stats-chart-outline"></ion-icon>
-            <p>Em breve</p>
+          <div class="chart-container">
+            <canvas #cloroChart></canvas>
           </div>
         </ion-card-content>
       </ion-card>
+
     </div>
-  
-  </ion-content>
+
+    <!-- Cards de Estatísticas -->
+    <div class="stats-section">
+      <h2 class="section-title">
+        <ion-icon name="stats-chart-outline"></ion-icon>
+        Estatísticas Gerais
+      </h2>
+      
+      <div class="stats-grid">
+        <ion-card class="stat-card">
+          <ion-card-content>
+            <div class="stat-icon" style="background: rgba(59, 130, 246, 0.1);">
+              <ion-icon name="water" color="primary"></ion-icon>
+            </div>
+            <div class="stat-info">
+              <p class="stat-label">Turbidez Média</p>
+              <h3 class="stat-value">{{ estatisticas.turbidezMedia | number:'1.2-2' }} <span class="unit">NTU</span></h3>
+              <p class="stat-change" [class.positive]="estatisticas.turbidezTendencia > 0">
+                <ion-icon [name]="estatisticas.turbidezTendencia > 0 ? 'arrow-up' : 'arrow-down'"></ion-icon>
+                {{ estatisticas.turbidezTendencia }}%
+              </p>
+            </div>
+          </ion-card-content>
+        </ion-card>
+
+        <ion-card class="stat-card">
+          <ion-card-content>
+            <div class="stat-icon" style="background: rgba(16, 185, 129, 0.1);">
+              <ion-icon name="flask" color="success"></ion-icon>
+            </div>
+            <div class="stat-info">
+              <p class="stat-label">pH Médio</p>
+              <h3 class="stat-value">{{ estatisticas.phMedio | number:'1.2-2' }} <span class="unit">pH</span></h3>
+              <p class="stat-change" [class.positive]="estatisticas.phTendencia > 0">
+                <ion-icon [name]="estatisticas.phTendencia > 0 ? 'arrow-up' : 'arrow-down'"></ion-icon>
+                {{ estatisticas.phTendencia }}%
+              </p>
+            </div>
+          </ion-card-content>
+        </ion-card>
+
+        <ion-card class="stat-card">
+          <ion-card-content>
+            <div class="stat-icon" style="background: rgba(251, 146, 60, 0.1);">
+              <ion-icon name="beaker" color="warning"></ion-icon>
+            </div>
+            <div class="stat-info">
+              <p class="stat-label">Cloro Médio</p>
+              <h3 class="stat-value">{{ estatisticas.cloroMedio | number:'1.2-2' }} <span class="unit">mg/L</span></h3>
+              <p class="stat-change" [class.positive]="estatisticas.cloroTendencia > 0">
+                <ion-icon [name]="estatisticas.cloroTendencia > 0 ? 'arrow-up' : 'arrow-down'"></ion-icon>
+                {{ estatisticas.cloroTendencia }}%
+              </p>
+            </div>
+          </ion-card-content>
+        </ion-card>
+
+        <ion-card class="stat-card">
+          <ion-card-content>
+            <div class="stat-icon" style="background: rgba(139, 92, 246, 0.1);">
+              <ion-icon name="analytics" color="secondary"></ion-icon>
+            </div>
+            <div class="stat-info">
+              <p class="stat-label">Nível Água Médio</p>
+              <h3 class="stat-value">{{ estatisticas.nivelMedio | number:'1.2-2' }} <span class="unit">cm</span></h3>
+              <p class="stat-change" [class.positive]="estatisticas.nivelTendencia > 0">
+                <ion-icon [name]="estatisticas.nivelTendencia > 0 ? 'arrow-up' : 'arrow-down'"></ion-icon>
+                {{ estatisticas.nivelTendencia }}%
+              </p>
+            </div>
+          </ion-card-content>
+        </ion-card>
+      </div>
+    </div>
+
+  </div>
+
+</ion-content>
