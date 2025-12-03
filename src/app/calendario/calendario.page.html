@@ -8,7 +8,7 @@
         <div class="header-title">
           <ion-icon name="calendar"></ion-icon>
           <div>
-            <h1>Calendário de Registros</h1>
+            <h1>Registros Diários</h1>
             <p>Clique em qualquer dia para ver os detalhes</p>
           </div>
         </div>
@@ -47,49 +47,7 @@
       <p class="loading-text">Carregando dados do dia...</p>
     </div>
 
-    <!-- Estatísticas Rápidas -->
-    <div *ngIf="!carregando && dadosDia.length > 0 && mostrarDetalhes" class="stats-rapidas">
-      <ion-card class="stat-mini">
-        <ion-card-content>
-          <ion-icon name="documents-outline" color="primary"></ion-icon>
-          <div class="stat-info">
-            <h3>{{ dadosDia.length }}</h3>
-            <p>Registros</p>
-          </div>
-        </ion-card-content>
-      </ion-card>
-
-      <ion-card class="stat-mini" *ngIf="getEstatisticasRapidas()?.turbidezMedia !== 'N/D'">
-        <ion-card-content>
-          <ion-icon name="contrast-outline" color="warning"></ion-icon>
-          <div class="stat-info">
-            <h3>{{ getEstatisticasRapidas()?.turbidezMedia }}</h3>
-            <p>Turbidez Média</p>
-          </div>
-        </ion-card-content>
-      </ion-card>
-
-      <ion-card class="stat-mini" *ngIf="getEstatisticasRapidas()?.phMedio !== 'N/D'">
-        <ion-card-content>
-          <ion-icon name="flask-outline" color="success"></ion-icon>
-          <div class="stat-info">
-            <h3>{{ getEstatisticasRapidas()?.phMedio }}</h3>
-            <p>pH Médio</p>
-          </div>
-        </ion-card-content>
-      </ion-card>
-
-      <ion-card class="stat-mini" *ngIf="getEstatisticasRapidas()?.cloroMedio !== 'N/D'">
-        <ion-card-content>
-          <ion-icon name="beaker-outline" color="tertiary"></ion-icon>
-          <div class="stat-info">
-            <h3>{{ getEstatisticasRapidas()?.cloroMedio }}</h3>
-            <p>Cloro Médio</p>
-          </div>
-        </ion-card-content>
-      </ion-card>
-    </div>
-
+    
     <!-- Header de Resultados -->
     <div *ngIf="!carregando && dadosDia.length > 0 && mostrarDetalhes" class="resultados-header">
       <h2>
