@@ -1,95 +1,254 @@
-<ion-header [translucent]="true">
-    <ion-toolbar color="primary">
-      <ion-title>
-        <ion-icon name="calendar" style="vertical-align: middle; margin-right: 8px;"></ion-icon>
-        Calendário
-      </ion-title>
-    </ion-toolbar>
-  </ion-header>
+<ion-content [fullscreen]="true">
   
-  <ion-content [fullscreen]="true" class="ion-padding">
+  <div class="content-wrapper">
     
-    <!-- Seletor de Data -->
-    <ion-card class="calendario-card">
-      <ion-card-header>
-        <ion-card-title>Selecione uma Data</ion-card-title>
-      </ion-card-header>
+    <!-- Header Personalizado -->
+    <div class="custom-header">
+      <div class="header-content">
+        <div class="header-title">
+          <ion-icon name="calendar"></ion-icon>
+          <div>
+            <h1>Calendário de Registros</h1>
+            <p>Clique em qualquer dia para ver os detalhes</p>
+          </div>
+        </div>
+        <div class="header-badge">
+          <ion-icon name="time"></ion-icon>
+          <span>Histórico</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card de Informação -->
+    <ion-card class="info-card">
       <ion-card-content>
-        <ion-datetime 
-          presentation="date" 
-          [(ngModel)]="dataSelecionada"
-          locale="pt-BR"
-          [max]="dataMaxima"
-          (ionChange)="onDataSelecionada()"
-          class="custom-datetime">
-        </ion-datetime>
+        <div class="info-content">
+          <ion-icon name="information-circle" color="primary"></ion-icon>
+          <div>
+            <p><strong>Navegue pelo calendário</strong></p>
+            <p class="subtitle">
+              Os dias com <span class="badge-verde">verde</span> têm poucos registros, 
+              <span class="badge-laranja">laranja</span> têm médios e 
+              <span class="badge-vermelho">vermelho</span> têm muitos registros.
+            </p>
+          </div>
+        </div>
       </ion-card-content>
     </ion-card>
-  
-    <!-- Loading -->
-    <ion-spinner *ngIf="carregando" name="crescent" class="spinner-center"></ion-spinner>
-  
-    <!-- Resultados -->
-    <div *ngIf="!carregando && dadosDia.length > 0" class="resultados">
-      <div class="resultados-header">
-        <h2>Dados de {{ formatarDataTitulo(dataSelecionada) }}</h2>
+
+    <!-- FullCalendar Card -->
+    <ion-card class="calendar-card" [class.loaded]="animacaoAtiva">
+      <ion-card-content>
+        <full-calendar [options]="calendarOptions"></full-calendar>
+      </ion-card-content>
+    </ion-card>
+
+    <!-- Loading Spinner -->
+    <div *ngIf="carregando" class="loading-container">
+      <ion-spinner name="crescent" class="spinner-elegante"></ion-spinner>
+      <p class="loading-text">Carregando dados do dia...</p>
+    </div>
+
+    <!-- Estatísticas Rápidas -->
+    <div *ngIf="!carregando && dadosDia.length > 0 && mostrarDetalhes" class="stats-rapidas">
+      <ion-card class="stat-mini">
+        <ion-card-content>
+          <ion-icon name="documents-outline" color="primary"></ion-icon>
+          <div class="stat-info">
+            <h3>{{ dadosDia.length }}</h3>
+            <p>Registros</p>
+          </div>
+        </ion-card-content>
+      </ion-card>
+
+      <ion-card class="stat-mini" *ngIf="getEstatisticasRapidas()?.turbidezMedia !== 'N/D'">
+        <ion-card-content>
+          <ion-icon name="contrast-outline" color="warning"></ion-icon>
+          <div class="stat-info">
+            <h3>{{ getEstatisticasRapidas()?.turbidezMedia }}</h3>
+            <p>Turbidez Média</p>
+          </div>
+        </ion-card-content>
+      </ion-card>
+
+      <ion-card class="stat-mini" *ngIf="getEstatisticasRapidas()?.phMedio !== 'N/D'">
+        <ion-card-content>
+          <ion-icon name="flask-outline" color="success"></ion-icon>
+          <div class="stat-info">
+            <h3>{{ getEstatisticasRapidas()?.phMedio }}</h3>
+            <p>pH Médio</p>
+          </div>
+        </ion-card-content>
+      </ion-card>
+
+      <ion-card class="stat-mini" *ngIf="getEstatisticasRapidas()?.cloroMedio !== 'N/D'">
+        <ion-card-content>
+          <ion-icon name="beaker-outline" color="tertiary"></ion-icon>
+          <div class="stat-info">
+            <h3>{{ getEstatisticasRapidas()?.cloroMedio }}</h3>
+            <p>Cloro Médio</p>
+          </div>
+        </ion-card-content>
+      </ion-card>
+    </div>
+
+    <!-- Header de Resultados -->
+    <div *ngIf="!carregando && dadosDia.length > 0 && mostrarDetalhes" class="resultados-header">
+      <h2>
+        <ion-icon name="calendar-number-outline"></ion-icon>
+        {{ formatarDataTitulo(dataSelecionada) }}
+      </h2>
+      <div class="header-actions">
         <ion-badge color="secondary">{{ dadosDia.length }} registro(s)</ion-badge>
+        <ion-button fill="clear" size="small" (click)="limparSelecao()">
+          <ion-icon name="close-circle-outline" slot="icon-only"></ion-icon>
+        </ion-button>
       </div>
-  
-      <ion-grid>
-        <ion-row>
-          <ion-col size="12" size-md="6" size-lg="4" *ngFor="let dado of dadosDia">
-            <ion-card class="sensor-card">
-              <ion-card-header>
-                <div class="sensor-header">
-                  <ion-icon 
-                    [name]="getIconeSensor(dado.tipo || 'default')" 
-                    [color]="getCorSensor(dado.tipo || 'default')"
-                    class="sensor-icon-large">
-                  </ion-icon>
-                  <div>
+    </div>
+
+    <!-- Grid de Sensores -->
+    <ion-grid *ngIf="!carregando && dadosDia.length > 0 && mostrarDetalhes">
+      <ion-row>
+        <ion-col size="12" size-md="6" size-lg="4" 
+          *ngFor="let dado of dadosDia; let i = index">
+          <ion-card class="sensor-card" [style.animation-delay]="(i * 0.1) + 's'">
+            
+            <!-- Header do Card -->
+            <ion-card-header>
+              <div class="sensor-header">
+                <div class="sensor-info">
+                  <div class="icon-wrapper">
+                    <ion-icon 
+                      [name]="getIconeSensor(dado.tipo || 'default')" 
+                      [color]="getCorSensor(dado.tipo || 'default')"
+                      class="sensor-icon-large">
+                    </ion-icon>
+                  </div>
+                  <div class="sensor-text">
                     <ion-card-title>{{ dado.nome || dado.tipo || 'Sensor' }}</ion-card-title>
-                    <ion-card-subtitle>{{ formatarData(dado.timestamp || dado.data) }}</ion-card-subtitle>
+                    <ion-card-subtitle>
+                      <ion-icon name="time-outline"></ion-icon>
+                      {{ formatarData(dado.timestamp || dado.data) }}
+                    </ion-card-subtitle>
                   </div>
                 </div>
-              </ion-card-header>
+                
+                <!-- Badge de Status -->
+                <div class="status-badge" [class]="dado.status || 'ativo'">
+                  <ion-icon name="ellipse"></ion-icon>
+                  {{ dado.status || 'Ativo' }}
+                </div>
+              </div>
+            </ion-card-header>
+            
+            <!-- Conteúdo do Card -->
+            <ion-card-content>
               
-              <ion-card-content>
-                <ion-list class="sensor-details" lines="none">
-                  <ion-item *ngFor="let prop of getPropriedadesCustomizadas(dado)">
-                    <ion-icon 
-                      [name]="getIconePropriedade(prop.chave)" 
-                      slot="start" 
-                      [color]="getCorPropriedade(prop.valor)">
-                    </ion-icon>
-                    <ion-label>
-                      <p>{{ prop.chave }}</p>
-                      <h3>{{ prop.valor }}</h3>
-                    </ion-label>
-                  </ion-item>
-                </ion-list>
-              </ion-card-content>
-            </ion-card>
-          </ion-col>
-        </ion-row>
-      </ion-grid>
-    </div>
-  
-    <!-- Empty State -->
+              <!-- Grid de Medições Principais -->
+              <div class="medicoes-principais" *ngIf="dado.turbidez || dado.ph || dado.cloro || dado.nivel_agua">
+                
+                <div class="medicao-item" *ngIf="dado.turbidez">
+                  <div class="medicao-header">
+                    <ion-icon name="contrast-outline" color="warning"></ion-icon>
+                    <span class="medicao-label">Turbidez</span>
+                  </div>
+                  <div class="medicao-valor">
+                    {{ dado.turbidez }}<span class="unidade">NTU</span>
+                  </div>
+                </div>
+                
+                <div class="medicao-item" *ngIf="dado.ph">
+                  <div class="medicao-header">
+                    <ion-icon name="flask-outline" color="success"></ion-icon>
+                    <span class="medicao-label">pH</span>
+                  </div>
+                  <div class="medicao-valor">
+                    {{ dado.ph }}<span class="unidade">pH</span>
+                  </div>
+                </div>
+                
+                <div class="medicao-item" *ngIf="dado.cloro">
+                  <div class="medicao-header">
+                    <ion-icon name="beaker-outline" color="tertiary"></ion-icon>
+                    <span class="medicao-label">Cloro</span>
+                  </div>
+                  <div class="medicao-valor">
+                    {{ dado.cloro }}<span class="unidade">mg/L</span>
+                  </div>
+                </div>
+                
+                <div class="medicao-item" *ngIf="dado.nivel_agua">
+                  <div class="medicao-header">
+                    <ion-icon name="analytics-outline" color="secondary"></ion-icon>
+                    <span class="medicao-label">Nível</span>
+                  </div>
+                  <div class="medicao-valor">
+                    {{ dado.nivel_agua }}<span class="unidade">cm</span>
+                  </div>
+                </div>
+                
+              </div>
+
+              <!-- Propriedades Customizadas -->
+              <ion-list 
+                class="propriedades-customizadas" 
+                lines="none" 
+                *ngIf="getPropriedadesCustomizadas(dado).length > 0">
+                <ion-item *ngFor="let prop of getPropriedadesCustomizadas(dado)">
+                  <ion-icon 
+                    [name]="getIconePropriedade(prop.chave)" 
+                    slot="start" 
+                    [color]="getCorPropriedade(prop.valor)">
+                  </ion-icon>
+                  <ion-label>
+                    <p>{{ prop.chave }}</p>
+                    <h3>{{ prop.valor }}</h3>
+                  </ion-label>
+                </ion-item>
+              </ion-list>
+              
+            </ion-card-content>
+          </ion-card>
+        </ion-col>
+      </ion-row>
+    </ion-grid>
+
+    <!-- Empty State - Nenhum Registro -->
     <ion-card *ngIf="!carregando && dadosDia.length === 0 && dataSelecionada" class="empty-state">
       <ion-card-content>
-        <ion-icon name="calendar-clear-outline" class="empty-icon"></ion-icon>
+        <div class="empty-icon-wrapper">
+          <ion-icon name="calendar-clear-outline" class="empty-icon"></ion-icon>
+        </div>
         <h2>Nenhum registro encontrado</h2>
-        <p>Não há dados para a data selecionada</p>
+        <p>Não há dados disponíveis para {{ formatarDataTitulo(dataSelecionada) }}</p>
+        <ion-button fill="outline" color="primary" (click)="limparSelecao()">
+          <ion-icon name="calendar-outline" slot="start"></ion-icon>
+          Voltar ao calendário
+        </ion-button>
       </ion-card-content>
     </ion-card>
-  
-    <ion-card *ngIf="!dataSelecionada && !carregando" class="empty-state">
+
+    <!-- Empty State - Inicial -->
+    <ion-card *ngIf="!dataSelecionada && !carregando" class="empty-state initial">
       <ion-card-content>
-        <ion-icon name="calendar-outline" class="empty-icon"></ion-icon>
-        <h2>Selecione uma data</h2>
-        <p>Escolha uma data acima para visualizar os registros</p>
+        <div class="empty-icon-wrapper">
+          <ion-icon name="hand-left-outline" class="empty-icon pointer"></ion-icon>
+        </div>
+        <h2>Selecione uma data no calendário</h2>
+        <p>Clique em qualquer dia para visualizar os registros históricos e estatísticas detalhadas</p>
+        <div class="info-chips">
+          <ion-chip color="primary">
+            <ion-icon name="bar-chart-outline"></ion-icon>
+            <ion-label>Estatísticas</ion-label>
+          </ion-chip>
+          <ion-chip color="success">
+            <ion-icon name="checkmark-done-outline"></ion-icon>
+            <ion-label>Detalhes completos</ion-label>
+          </ion-chip>
+        </div>
       </ion-card-content>
     </ion-card>
-  
-  </ion-content>
+
+  </div>
+
+</ion-content>
