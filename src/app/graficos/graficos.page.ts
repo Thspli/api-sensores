@@ -1,8 +1,11 @@
-import { Component, OnInit, ViewChild, ElementRef, AfterViewInit } from '@angular/core';
+import { Component, OnInit, ViewChild, ElementRef, AfterViewInit, OnDestroy } from '@angular/core';
 import { IonicModule } from '@ionic/angular';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Chart, registerables } from 'chart.js';
+import { Subscription, interval } from 'rxjs';
+import { switchMap } from 'rxjs/operators';
+import { Api } from '../api';
 
 Chart.register(...registerables);
 
@@ -13,7 +16,7 @@ Chart.register(...registerables);
   standalone: true,
   imports: [IonicModule, CommonModule, FormsModule]
 })
-export class GraficosPage implements OnInit, AfterViewInit {
+export class GraficosPage implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild('turbidezChart') turbidezChartRef!: ElementRef;
   @ViewChild('phChart') phChartRef!: ElementRef;
   @ViewChild('comparacaoChart') comparacaoChartRef!: ElementRef;
@@ -27,6 +30,13 @@ export class GraficosPage implements OnInit, AfterViewInit {
 
   periodoSelecionado: string = '24h';
 
+  // Dados da API
+  dadosAPI: any[] = [];
+  historicoCompleto: any[] = [];
+  
+  // Subscription para atualização automática
+  private atualizacaoSubscription?: Subscription;
+
   // Estatísticas
   estatisticas = {
     turbidezMedia: 0,
@@ -39,21 +49,89 @@ export class GraficosPage implements OnInit, AfterViewInit {
     nivelTendencia: 0
   };
 
-  constructor() {}
+  constructor(private apiService: Api) {}
 
   ngOnInit() {
-    this.calcularEstatisticas();
+    this.carregarDadosDaAPI();
+    this.iniciarAtualizacaoAutomatica();
   }
 
   ngAfterViewInit() {
-    // Pequeno delay para garantir que os canvas estejam renderizados
     setTimeout(() => {
       this.criarGraficos();
     }, 100);
   }
 
+  ngOnDestroy() {
+    if (this.atualizacaoSubscription) {
+      this.atualizacaoSubscription.unsubscribe();
+    }
+    this.destruirGraficos();
+  }
+
   // ========================================
-  // CRIAR GRÁFICOS
+  // CARREGAR DADOS DA API (USANDO O SERVIÇO)
+  // ========================================
+
+  carregarDadosDaAPI() {
+    console.log('🔍 Buscando dados da API...');
+    
+    this.apiService.getSensores().subscribe({
+      next: (dados: any) => {
+        console.log('✅ Dados recebidos da API:', dados);
+        
+        if (dados && dados.length > 0) {
+          this.dadosAPI = dados;
+          this.processarDados();
+          this.calcularEstatisticas();
+          
+          // Atualizar gráficos se já foram criados
+          if (this.turbidezChart) {
+            this.atualizarGraficos();
+          }
+        } else {
+          console.warn('⚠️ API retornou vazio, usando dados mockados');
+          this.gerarDadosMockados();
+          this.processarDados();
+          this.calcularEstatisticas();
+        }
+      },
+      error: (error) => {
+        console.error('❌ Erro ao carregar dados da API:', error);
+        // Em caso de erro, usa dados mockados
+        this.gerarDadosMockados();
+        this.processarDados();
+        this.calcularEstatisticas();
+      }
+    });
+  }
+
+  // ========================================
+  // PROCESSAR DADOS DA API
+  // ========================================
+
+  processarDados() {
+    if (this.dadosAPI.length === 0) {
+      console.warn('⚠️ Nenhum dado da API, usando mockados');
+      this.gerarDadosMockados();
+      return;
+    }
+
+    // Ordenar por timestamp (mais antigo primeiro)
+    this.dadosAPI.sort((a, b) => {
+      const dateA = new Date(a.timestamp || a.data).getTime();
+      const dateB = new Date(b.timestamp || b.data).getTime();
+      return dateA - dateB;
+    });
+
+    // SEMPRE usa todos os dados disponíveis, independente da data
+    this.historicoCompleto = [...this.dadosAPI];
+
+    console.log(`📊 Processados ${this.historicoCompleto.length} registros da API`);
+  }
+
+  // ========================================
+  // CRIAR GRÁFICOS COM DADOS REAIS
   // ========================================
 
   criarGraficos() {
@@ -66,7 +144,7 @@ export class GraficosPage implements OnInit, AfterViewInit {
   // Gráfico de Linha - Turbidez
   criarGraficoTurbidez() {
     const ctx = this.turbidezChartRef.nativeElement.getContext('2d');
-    const dados = this.gerarDadosMockados('turbidez');
+    const dados = this.extrairDadosParaGrafico('turbidez');
 
     this.turbidezChart = new Chart(ctx, {
       type: 'line',
@@ -87,55 +165,14 @@ export class GraficosPage implements OnInit, AfterViewInit {
           pointBorderWidth: 2
         }]
       },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: {
-            display: true,
-            position: 'top',
-            labels: {
-              font: { size: 12, weight: 'bold' },
-              padding: 15
-            }
-          },
-          tooltip: {
-            backgroundColor: 'rgba(0, 0, 0, 0.8)',
-            padding: 12,
-            titleFont: { size: 14, weight: 'bold' },
-            bodyFont: { size: 13 },
-            cornerRadius: 8
-          }
-        },
-        scales: {
-          y: {
-            beginAtZero: true,
-            grid: {
-              color: 'rgba(0, 0, 0, 0.05)'
-            },
-            ticks: {
-              font: { size: 11 }
-            }
-          },
-          x: {
-            grid: {
-              display: false
-            },
-            ticks: {
-              font: { size: 10 },
-              maxRotation: 45,
-              minRotation: 45
-            }
-          }
-        }
-      }
+      options: this.getOpcoesGraficoLinha('Turbidez', 'NTU')
     });
   }
 
   // Gráfico de Linha - pH
   criarGraficoPh() {
     const ctx = this.phChartRef.nativeElement.getContext('2d');
-    const dados = this.gerarDadosMockados('ph');
+    const dados = this.extrairDadosParaGrafico('ph');
 
     this.phChart = new Chart(ctx, {
       type: 'line',
@@ -156,55 +193,14 @@ export class GraficosPage implements OnInit, AfterViewInit {
           pointBorderWidth: 2
         }]
       },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: {
-            display: true,
-            position: 'top',
-            labels: {
-              font: { size: 12, weight: 'bold' },
-              padding: 15
-            }
-          },
-          tooltip: {
-            backgroundColor: 'rgba(0, 0, 0, 0.8)',
-            padding: 12,
-            titleFont: { size: 14, weight: 'bold' },
-            bodyFont: { size: 13 },
-            cornerRadius: 8
-          }
-        },
-        scales: {
-          y: {
-            min: 0,
-            max: 14,
-            grid: {
-              color: 'rgba(0, 0, 0, 0.05)'
-            },
-            ticks: {
-              font: { size: 11 }
-            }
-          },
-          x: {
-            grid: {
-              display: false
-            },
-            ticks: {
-              font: { size: 10 },
-              maxRotation: 45,
-              minRotation: 45
-            }
-          }
-        }
-      }
+      options: this.getOpcoesGraficoLinha('pH', 'pH', 0, 14)
     });
   }
 
   // Gráfico de Barras - Comparação
   criarGraficoComparacao() {
     const ctx = this.comparacaoChartRef.nativeElement.getContext('2d');
+    const medias = this.calcularMedias();
 
     this.comparacaoChart = new Chart(ctx, {
       type: 'bar',
@@ -212,7 +208,12 @@ export class GraficosPage implements OnInit, AfterViewInit {
         labels: ['Turbidez', 'pH', 'Cloro', 'Nível Água'],
         datasets: [{
           label: 'Média Atual',
-          data: [15.5, 7.2, 2.8, 45.3], // Valores mockados
+          data: [
+            medias.turbidez,
+            medias.ph,
+            medias.cloro,
+            medias.nivel
+          ],
           backgroundColor: [
             'rgba(59, 130, 246, 0.8)',
             'rgba(16, 185, 129, 0.8)',
@@ -275,13 +276,19 @@ export class GraficosPage implements OnInit, AfterViewInit {
   // Gráfico de Rosca - Cloro
   criarGraficoCloro() {
     const ctx = this.cloroChartRef.nativeElement.getContext('2d');
+    const distribuicao = this.calcularDistribuicaoCloro();
 
     this.cloroChart = new Chart(ctx, {
       type: 'doughnut',
       data: {
-        labels: ['Ideal', 'Aceitável', 'Baixo', 'Alto'],
+        labels: ['Ideal (1.5-2.5)', 'Aceitável (1-1.5 / 2.5-3)', 'Baixo (<1)', 'Alto (>3)'],
         datasets: [{
-          data: [45, 30, 15, 10], // Percentuais mockados
+          data: [
+            distribuicao.ideal,
+            distribuicao.aceitavel,
+            distribuicao.baixo,
+            distribuicao.alto
+          ],
           backgroundColor: [
             'rgba(16, 185, 129, 0.8)',
             'rgba(59, 130, 246, 0.8)',
@@ -327,71 +334,259 @@ export class GraficosPage implements OnInit, AfterViewInit {
   }
 
   // ========================================
-  // GERAR DADOS MOCKADOS
+  // EXTRAIR DADOS PARA GRÁFICOS (CORRIGIDO)
   // ========================================
 
-  gerarDadosMockados(tipo: string) {
-    let labels: string[] = [];
-    let valores: number[] = [];
+  extrairDadosParaGrafico(tipo: string) {
+    const labels: string[] = [];
+    const valores: number[] = [];
 
-    if (this.periodoSelecionado === '24h') {
-      // Últimas 24 horas (de hora em hora)
-      for (let i = 23; i >= 0; i--) {
-        const hora = new Date();
-        hora.setHours(hora.getHours() - i);
-        labels.push(hora.getHours() + ':00');
-      }
-    } else if (this.periodoSelecionado === '7d') {
-      // Últimos 7 dias
-      for (let i = 6; i >= 0; i--) {
-        const dia = new Date();
-        dia.setDate(dia.getDate() - i);
-        labels.push(dia.getDate() + '/' + (dia.getMonth() + 1));
-      }
-    } else if (this.periodoSelecionado === '30d') {
-      // Últimos 30 dias
-      for (let i = 29; i >= 0; i--) {
-        const dia = new Date();
-        dia.setDate(dia.getDate() - i);
-        labels.push(dia.getDate() + '/' + (dia.getMonth() + 1));
-      }
+    if (this.historicoCompleto.length === 0) {
+      return this.gerarDadosMockadosParaTipo(tipo);
     }
 
-    // Gerar valores aleatórios baseados no tipo
-    valores = labels.map(() => {
+    // Agrupar dados baseado no período
+    const dadosAgrupados = this.agruparDadosPorPeriodo();
+
+    dadosAgrupados.forEach(item => {
+      labels.push(item.label);
+      
+      let valor = 0;
       switch (tipo) {
         case 'turbidez':
-          return Math.random() * 20 + 5; // Entre 5 e 25 NTU
+          valor = item.turbidez || 0;
+          break;
         case 'ph':
-          return Math.random() * 2 + 6.5; // Entre 6.5 e 8.5
+          valor = item.ph || 0;
+          break;
         case 'cloro':
-          return Math.random() * 3 + 1; // Entre 1 e 4 mg/L
+          valor = item.cloro || 0;
+          break;
         case 'nivel':
-          return Math.random() * 40 + 30; // Entre 30 e 70 cm
-        default:
-          return 0;
+          valor = item.nivel_agua || 0;
+          break;
       }
+      valores.push(valor);
     });
 
     return { labels, valores };
   }
 
+  agruparDadosPorPeriodo() {
+    if (this.periodoSelecionado === '24h') {
+      return this.agruparPorHora();
+    } else if (this.periodoSelecionado === '7d') {
+      return this.agruparPorDia();
+    } else {
+      return this.agruparPorDia();
+    }
+  }
+
+  agruparPorHora() {
+    const grupos: any = {};
+    
+    this.historicoCompleto.forEach(item => {
+      const data = new Date(item.timestamp || item.data);
+      const chave = `${data.getDate()}/${data.getMonth() + 1} ${data.getHours()}h`;
+      
+      if (!grupos[chave]) {
+        grupos[chave] = {
+          label: `${data.getHours()}h`,
+          turbidez: [],
+          ph: [],
+          cloro: [],
+          nivel_agua: []
+        };
+      }
+      
+      // CORREÇÃO: converter para número e validar
+      const turbidez = Number(item.turbidez);
+      const ph = Number(item.ph);
+      const cloro = Number(item.cloro);
+      const nivelAgua = Number(item.nivel_agua);
+      
+      if (!isNaN(turbidez) && turbidez > 0) grupos[chave].turbidez.push(turbidez);
+      if (!isNaN(ph) && ph > 0) grupos[chave].ph.push(ph);
+      if (!isNaN(cloro) && cloro > 0) grupos[chave].cloro.push(cloro);
+      if (!isNaN(nivelAgua) && nivelAgua > 0) grupos[chave].nivel_agua.push(nivelAgua);
+    });
+
+    return Object.values(grupos).map((grupo: any) => ({
+      label: grupo.label,
+      turbidez: this.calcularMedia(grupo.turbidez),
+      ph: this.calcularMedia(grupo.ph),
+      cloro: this.calcularMedia(grupo.cloro),
+      nivel_agua: this.calcularMedia(grupo.nivel_agua)
+    }));
+  }
+
+  agruparPorDia() {
+    const grupos: any = {};
+    
+    this.historicoCompleto.forEach(item => {
+      const data = new Date(item.timestamp || item.data);
+      const chave = `${data.getDate()}/${data.getMonth() + 1}`;
+      
+      if (!grupos[chave]) {
+        grupos[chave] = {
+          label: chave,
+          turbidez: [],
+          ph: [],
+          cloro: [],
+          nivel_agua: []
+        };
+      }
+      
+      // CORREÇÃO: converter para número e validar
+      const turbidez = Number(item.turbidez);
+      const ph = Number(item.ph);
+      const cloro = Number(item.cloro);
+      const nivelAgua = Number(item.nivel_agua);
+      
+      if (!isNaN(turbidez) && turbidez > 0) grupos[chave].turbidez.push(turbidez);
+      if (!isNaN(ph) && ph > 0) grupos[chave].ph.push(ph);
+      if (!isNaN(cloro) && cloro > 0) grupos[chave].cloro.push(cloro);
+      if (!isNaN(nivelAgua) && nivelAgua > 0) grupos[chave].nivel_agua.push(nivelAgua);
+    });
+
+    return Object.values(grupos).map((grupo: any) => ({
+      label: grupo.label,
+      turbidez: this.calcularMedia(grupo.turbidez),
+      ph: this.calcularMedia(grupo.ph),
+      cloro: this.calcularMedia(grupo.cloro),
+      nivel_agua: this.calcularMedia(grupo.nivel_agua)
+    }));
+  }
+
+  calcularMedia(valores: number[]) {
+    if (valores.length === 0) return 0;
+    const soma = valores.reduce((acc, val) => acc + val, 0);
+    const media = soma / valores.length;
+    // CORREÇÃO: arredondar para 2 casas decimais
+    return Math.round(media * 100) / 100;
+  }
+
   // ========================================
-  // CALCULAR ESTATÍSTICAS
+  // CALCULAR MÉDIAS E ESTATÍSTICAS (CORRIGIDO)
   // ========================================
 
-  calcularEstatisticas() {
-    // Valores mockados - substituir pela API quando disponível
-    this.estatisticas = {
-      turbidezMedia: 15.5,
-      turbidezTendencia: -2.3,
-      phMedio: 7.2,
-      phTendencia: 1.5,
-      cloroMedio: 2.8,
-      cloroTendencia: 0.8,
-      nivelMedio: 45.3,
-      nivelTendencia: -1.2
+  calcularMedias() {
+    if (this.historicoCompleto.length === 0) {
+      return { turbidez: 0, ph: 0, cloro: 0, nivel: 0 };
+    }
+
+    // CORREÇÃO: converter strings para números e filtrar valores inválidos
+    const turbidez = this.historicoCompleto
+      .map(d => Number(d.turbidez))
+      .filter(v => !isNaN(v) && v > 0 && v < 100); // Filtrar valores absurdos
+    
+    const ph = this.historicoCompleto
+      .map(d => Number(d.ph))
+      .filter(v => !isNaN(v) && v > 0 && v <= 14); // pH entre 0 e 14
+    
+    const cloro = this.historicoCompleto
+      .map(d => Number(d.cloro))
+      .filter(v => !isNaN(v) && v > 0 && v < 10); // Cloro razoável
+    
+    const nivel = this.historicoCompleto
+      .map(d => Number(d.nivel_agua))
+      .filter(v => !isNaN(v) && v > 0 && v < 200); // Nível razoável
+
+    return {
+      turbidez: this.calcularMedia(turbidez),
+      ph: this.calcularMedia(ph),
+      cloro: this.calcularMedia(cloro),
+      nivel: this.calcularMedia(nivel)
     };
+  }
+
+  calcularDistribuicaoCloro() {
+    // CORREÇÃO: converter para números e filtrar valores válidos
+    const valores = this.historicoCompleto
+      .map(d => Number(d.cloro))
+      .filter(v => !isNaN(v) && v > 0 && v < 10);
+    
+    if (valores.length === 0) {
+      return { ideal: 45, aceitavel: 30, baixo: 15, alto: 10 };
+    }
+
+    const total = valores.length;
+    const ideal = valores.filter(v => v >= 1.5 && v <= 2.5).length;
+    const aceitavel = valores.filter(v => (v >= 1 && v < 1.5) || (v > 2.5 && v <= 3)).length;
+    const baixo = valores.filter(v => v < 1).length;
+    const alto = valores.filter(v => v > 3).length;
+
+    return {
+      ideal: Math.round((ideal / total) * 100),
+      aceitavel: Math.round((aceitavel / total) * 100),
+      baixo: Math.round((baixo / total) * 100),
+      alto: Math.round((alto / total) * 100)
+    };
+  }
+
+  calcularEstatisticas() {
+    const medias = this.calcularMedias();
+    
+    this.estatisticas = {
+      turbidezMedia: medias.turbidez,
+      turbidezTendencia: this.calcularTendencia('turbidez'),
+      phMedio: medias.ph,
+      phTendencia: this.calcularTendencia('ph'),
+      cloroMedio: medias.cloro,
+      cloroTendencia: this.calcularTendencia('cloro'),
+      nivelMedio: medias.nivel,
+      nivelTendencia: this.calcularTendencia('nivel_agua')
+    };
+  }
+
+  calcularTendencia(campo: string) {
+    if (this.historicoCompleto.length < 2) return 0;
+
+    // CORREÇÃO: converter para números e filtrar valores válidos
+    const valores = this.historicoCompleto
+      .map((d: any) => Number(d[campo]))
+      .filter((v: any) => !isNaN(v) && v > 0);
+    
+    if (valores.length < 2) return 0;
+
+    const metade = Math.floor(valores.length / 2);
+    const primeiraMetade = valores.slice(0, metade);
+    const segundaMetade = valores.slice(metade);
+
+    const mediaPrimeira = this.calcularMedia(primeiraMetade);
+    const mediaSegunda = this.calcularMedia(segundaMetade);
+
+    if (mediaPrimeira === 0) return 0;
+
+    const tendencia = ((mediaSegunda - mediaPrimeira) / mediaPrimeira) * 100;
+    return Number(tendencia.toFixed(1));
+  }
+
+  // ========================================
+  // ATUALIZAÇÃO AUTOMÁTICA
+  // ========================================
+
+  iniciarAtualizacaoAutomatica() {
+    // Atualiza a cada 30 segundos
+    this.atualizacaoSubscription = interval(30000)
+      .pipe(switchMap(() => this.apiService.getSensores()))
+      .subscribe({
+        next: (dados) => {
+          console.log('♻️ Dados atualizados automaticamente');
+          if (dados && dados.length > 0) {
+            this.dadosAPI = dados;
+            this.processarDados();
+            this.calcularEstatisticas();
+            if (this.turbidezChart) {
+              this.destruirGraficos();
+              setTimeout(() => {
+                this.criarGraficos();
+              }, 100);
+            }
+          }
+        },
+        error: (err) => console.error('Erro na atualização automática:', err)
+      });
   }
 
   // ========================================
@@ -399,43 +594,122 @@ export class GraficosPage implements OnInit, AfterViewInit {
   // ========================================
 
   atualizarGraficos() {
-    // Destruir gráficos existentes
+    if (this.turbidezChart) {
+      this.destruirGraficos();
+      setTimeout(() => {
+        this.criarGraficos();
+      }, 100);
+    }
+  }
+
+  destruirGraficos() {
     if (this.turbidezChart) this.turbidezChart.destroy();
     if (this.phChart) this.phChart.destroy();
     if (this.comparacaoChart) this.comparacaoChart.destroy();
     if (this.cloroChart) this.cloroChart.destroy();
-
-    // Recriar com novos dados
-    setTimeout(() => {
-      this.criarGraficos();
-      this.calcularEstatisticas();
-    }, 100);
   }
 
   // ========================================
-  // INTEGRAÇÃO COM API (PREPARADO PARA O FUTURO)
+  // OPÇÕES DOS GRÁFICOS
   // ========================================
 
-  /*
-  async carregarDadosDaAPI() {
-    try {
-      const response = await fetch('SUA_API_URL/sensores');
-      const dados = await response.json();
-      
-      // Processar dados da API
-      this.processarDadosAPI(dados);
-      
-      // Atualizar gráficos com dados reais
-      this.atualizarGraficos();
-    } catch (error) {
-      console.error('Erro ao carregar dados da API:', error);
-      // Usar dados mockados em caso de erro
+  getOpcoesGraficoLinha(titulo: string, unidade: string, min?: number, max?: number) {
+    return {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          display: true,
+          position: 'top' as const,
+          labels: {
+            font: { size: 12, weight: 'bold' as const },
+            padding: 15
+          }
+        },
+        tooltip: {
+          backgroundColor: 'rgba(0, 0, 0, 0.8)',
+          padding: 12,
+          titleFont: { size: 14, weight: 'bold' as const },
+          bodyFont: { size: 13 },
+          cornerRadius: 8,
+          callbacks: {
+            label: (context: any) => `${context.dataset.label}: ${context.parsed.y.toFixed(2)} ${unidade}`
+          }
+        }
+      },
+      scales: {
+        y: {
+          min: min,
+          max: max,
+          beginAtZero: min === undefined,
+          grid: {
+            color: 'rgba(0, 0, 0, 0.05)'
+          },
+          ticks: {
+            font: { size: 11 }
+          }
+        },
+        x: {
+          grid: {
+            display: false
+          },
+          ticks: {
+            font: { size: 10 },
+            maxRotation: 45,
+            minRotation: 45
+          }
+        }
+      }
+    };
+  }
+
+  // ========================================
+  // DADOS MOCKADOS (FALLBACK) - VALORES REALISTAS
+  // ========================================
+
+  gerarDadosMockados() {
+    const agora = new Date();
+    this.historicoCompleto = [];
+
+    for (let i = 23; i >= 0; i--) {
+      const timestamp = new Date(agora);
+      timestamp.setHours(agora.getHours() - i);
+
+      this.historicoCompleto.push({
+        timestamp: timestamp.toISOString(),
+        turbidez: Math.random() * 15 + 5,      // Entre 5 e 20 NTU
+        ph: Math.random() * 1.5 + 6.5,         // Entre 6.5 e 8.0
+        cloro: Math.random() * 2 + 1,          // Entre 1 e 3 mg/L
+        nivel_agua: Math.random() * 30 + 40    // Entre 40 e 70 cm
+      });
     }
   }
 
-  processarDadosAPI(dados: any) {
-    // Transformar dados da API no formato necessário para os gráficos
-    // Implementar quando a API estiver pronta
+  gerarDadosMockadosParaTipo(tipo: string) {
+    const labels: string[] = [];
+    const valores: number[] = [];
+
+    for (let i = 23; i >= 0; i--) {
+      const hora = new Date();
+      hora.setHours(hora.getHours() - i);
+      labels.push(hora.getHours() + ':00');
+
+      switch (tipo) {
+        case 'turbidez':
+          valores.push(Math.random() * 15 + 5);      // Entre 5 e 20 NTU
+          break;
+        case 'ph':
+          valores.push(Math.random() * 1.5 + 6.5);   // Entre 6.5 e 8.0
+          break;
+        case 'cloro':
+          valores.push(Math.random() * 2 + 1);       // Entre 1 e 3 mg/L
+          break;
+        case 'nivel':
+          valores.push(Math.random() * 30 + 40);     // Entre 40 e 70 cm
+          break;
+      }
+    }
+
+    return { labels, valores };
   }
-  */
-}
+}     
