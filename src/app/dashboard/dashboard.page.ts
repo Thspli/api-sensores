@@ -16,6 +16,7 @@ export class DashboardPage implements OnInit, OnDestroy {
   public registroMaisRecente: any = null;
   public outrosRegistros: any[] = [];
   public registroExpandido: number | null = null; // Index do registro expandido
+  public registroColapsando: number | null = null; // Index do registro sendo colapsado
   public dadosHistorico: any[] = [];
   public ultimaAtualizacao?: Date;
   public dataMaxima: string = new Date().toISOString();
@@ -114,15 +115,35 @@ export class DashboardPage implements OnInit, OnDestroy {
   // Toggle expansão de um registro
   toggleRegistro(index: number): void {
     if (this.registroExpandido === index) {
-      this.registroExpandido = null; // Colapsar se já estiver expandido
+      // Se clicar no registro já expandido, colapsar com animação
+      this.registroColapsando = index;
+      setTimeout(() => {
+        this.registroExpandido = null;
+        this.registroColapsando = null;
+      }, 300); // Tempo da animação
     } else {
-      this.registroExpandido = index; // Expandir novo registro
+      // Se já houver outro registro expandido, colapsar primeiro
+      if (this.registroExpandido !== null) {
+        this.registroColapsando = this.registroExpandido;
+        setTimeout(() => {
+          this.registroExpandido = index;
+          this.registroColapsando = null;
+        }, 300);
+      } else {
+        // Se nenhum registro estiver expandido, expandir imediatamente
+        this.registroExpandido = index;
+      }
     }
   }
 
   // Verificar se registro está expandido
   isExpandido(index: number): boolean {
     return this.registroExpandido === index;
+  }
+
+  // Verificar se registro está colapsando
+  isColapsando(index: number): boolean {
+    return this.registroColapsando === index;
   }
 
   carregarDadosPorData(dataSelecionada: string): void {
