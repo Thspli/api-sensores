@@ -1,9 +1,20 @@
 import { Component, OnInit } from '@angular/core';
 import { Api } from '../api';
-import { CalendarOptions, EventClickArg, DateClickArg } from '@fullcalendar/core';
+import { CalendarOptions, EventClickArg } from '@fullcalendar/core';
+import { DateClickArg } from '@fullcalendar/interaction';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import ptBrLocale from '@fullcalendar/core/locales/pt-br';
+
+interface EventoCalendario {
+  date: string;
+  title: string;
+  backgroundColor: string;
+  borderColor: string;
+  extendedProps: {
+    quantidade: number;
+  };
+}
 
 @Component({
   selector: 'app-calendario',
@@ -33,18 +44,24 @@ export class CalendarioPage implements OnInit {
       today: 'Hoje'
     },
     height: 'auto',
-    events: [], // Será preenchido com dados da API
+    events: [],
     dateClick: this.handleDateClick.bind(this),
     eventClick: this.handleEventClick.bind(this),
     eventDisplay: 'block',
     displayEventTime: false,
     fixedWeekCount: false,
     showNonCurrentDates: true,
-    dayMaxEvents: 2, // Limita a 2 eventos por dia
+    dayMaxEvents: 2,
     moreLinkText: 'mais',
-    // Estilo dos eventos
     eventClassNames: 'custom-event',
-    dayCellClassNames: 'custom-day-cell'
+    dayCellClassNames: 'custom-day-cell',
+    // Melhorias adicionais
+    weekends: true,
+    editable: false,
+    selectable: true,
+    selectMirror: true,
+    navLinks: false,
+    eventColor: '#3b82f6'
   };
 
   constructor(private apiService: Api) {}
@@ -54,15 +71,65 @@ export class CalendarioPage implements OnInit {
       this.animacaoAtiva = true;
     }, 100);
     
-    // Carregar eventos mockados para demonstração
-    // Substitua isso pela chamada real à sua API
-    this.carregarEventosMockados();
+    // Carregar eventos reais da API
+    this.carregarEventosDaAPI();
   }
 
-  // MÉTODO MOCKADO - Substitua pela sua API real
+  // MÉTODO PARA INTEGRAÇÃO COM API REAL
+  carregarEventosDaAPI() {
+    // Opção 1: Se sua API retorna todos os dados e você quer contar por dia
+    this.apiService.getSensores().subscribe({
+      next: (dados: any[]) => {
+        const eventosPorData = this.processarDadosParaCalendario(dados);
+        this.calendarOptions.events = eventosPorData;
+        console.log('Eventos carregados:', eventosPorData);
+      },
+      error: (err) => {
+        console.error('Erro ao carregar eventos:', err);
+        // Fallback para dados mockados em caso de erro
+        this.carregarEventosMockados();
+      }
+    });
+  }
+
+  // Processar dados da API para formato do calendário
+  processarDadosParaCalendario(dados: any[]): EventoCalendario[] {
+    // Agrupar dados por data
+    const dadosPorData: { [key: string]: number } = {};
+    
+    dados.forEach(item => {
+      // Extrair a data do timestamp (formato: YYYY-MM-DD)
+      const timestamp = item.timestamp || item.data;
+      if (timestamp) {
+        const data = new Date(timestamp).toISOString().split('T')[0];
+        dadosPorData[data] = (dadosPorData[data] || 0) + 1;
+      }
+    });
+
+    // Converter para formato de eventos do FullCalendar
+    const eventos: EventoCalendario[] = Object.entries(dadosPorData).map(([data, quantidade]) => {
+      // Definir cor baseada na quantidade
+      let cor = '#10b981'; // Verde (poucos)
+      if (quantidade > 10) cor = '#ef4444'; // Vermelho (muitos)
+      else if (quantidade > 5) cor = '#fb923c'; // Laranja (médio)
+
+      return {
+        date: data,
+        title: `${quantidade} registro${quantidade !== 1 ? 's' : ''}`,
+        backgroundColor: cor,
+        borderColor: cor,
+        extendedProps: {
+          quantidade: quantidade
+        }
+      };
+    });
+
+    return eventos;
+  }
+
+  // MÉTODO MOCKADO - Usar apenas para testes
   carregarEventosMockados() {
-    // Simula dados de registros nos últimos 30 dias
-    const eventos = [];
+    const eventos: EventoCalendario[] = [];
     const hoje = new Date();
     
     for (let i = 0; i < 30; i++) {
@@ -70,13 +137,11 @@ export class CalendarioPage implements OnInit {
       data.setDate(data.getDate() - i);
       const dataStr = data.toISOString().split('T')[0];
       
-      // Quantidade aleatória de registros (1-15)
       const quantidade = Math.floor(Math.random() * 15) + 1;
       
-      // Cor baseada na quantidade
-      let cor = '#10b981'; // Verde (poucos)
-      if (quantidade > 10) cor = '#ef4444'; // Vermelho (muitos)
-      else if (quantidade > 5) cor = '#fb923c'; // Laranja (médio)
+      let cor = '#10b981';
+      if (quantidade > 10) cor = '#ef4444';
+      else if (quantidade > 5) cor = '#fb923c';
       
       eventos.push({
         date: dataStr,
@@ -91,39 +156,6 @@ export class CalendarioPage implements OnInit {
     
     this.calendarOptions.events = eventos;
   }
-
-  // MÉTODO PARA INTEGRAÇÃO COM API REAL
-  // Descomente e adapte quando sua API estiver pronta
-  /*
-  carregarEventosDaAPI() {
-    const mesAtual = new Date().toISOString().slice(0, 7); // "2024-12"
-    
-    // Endpoint que retorna contagem de registros por dia
-    this.apiService.getRegistrosPorMes(mesAtual).subscribe({
-      next: (response: any) => {
-        this.calendarOptions.events = response.registros.map((r: any) => {
-          // Definir cor baseada na quantidade
-          let cor = '#10b981';
-          if (r.quantidade > 10) cor = '#ef4444';
-          else if (r.quantidade > 5) cor = '#fb923c';
-          
-          return {
-            date: r.data,
-            title: `${r.quantidade} registro${r.quantidade !== 1 ? 's' : ''}`,
-            backgroundColor: cor,
-            borderColor: cor,
-            extendedProps: {
-              quantidade: r.quantidade
-            }
-          };
-        });
-      },
-      error: (err) => {
-        console.error('Erro ao carregar eventos:', err);
-      }
-    });
-  }
-  */
 
   // Quando clicar em uma data
   handleDateClick(arg: DateClickArg) {
@@ -149,20 +181,27 @@ export class CalendarioPage implements OnInit {
 
     this.apiService.getDadosPorData(data).subscribe({
       next: (dados: any) => {
-        this.dadosDia = dados;
+        this.dadosDia = Array.isArray(dados) ? dados : [];
         this.carregando = false;
         
-        // Animar entrada dos resultados
         setTimeout(() => {
           this.mostrarDetalhes = true;
         }, 100);
+        
+        console.log('Dados do dia carregados:', this.dadosDia);
       },
       error: (err: any) => {
         console.error('Erro ao carregar dados:', err);
         this.carregando = false;
         this.mostrarDetalhes = false;
+        this.dadosDia = [];
       }
     });
+  }
+
+  // Recarregar eventos do calendário
+  recarregarEventos() {
+    this.carregarEventosDaAPI();
   }
 
   formatarData(timestamp: string): string {
@@ -189,7 +228,7 @@ export class CalendarioPage implements OnInit {
   }
 
   getPropriedadesCustomizadas(sensor: any): Array<{chave: string, valor: any}> {
-    const camposPadrao = ['id', '_id', 'nome', 'tipo', 'localizacao', 'timestamp', 'data', 'status', 'unidade', 'valor'];
+    const camposPadrao = ['id', '_id', 'nome', 'tipo', 'localizacao', 'timestamp', 'data', 'status', 'unidade', 'valor', 'turbidez', 'ph', 'cloro', 'nivel_agua'];
     const propriedades: Array<{chave: string, valor: any}> = [];
     
     Object.keys(sensor).forEach(chave => {
@@ -271,7 +310,6 @@ export class CalendarioPage implements OnInit {
     return cores[tipo?.toLowerCase()] || cores.default;
   }
 
-  // Método para obter estatísticas rápidas
   getEstatisticasRapidas(): any {
     if (this.dadosDia.length === 0) return null;
 
@@ -290,7 +328,6 @@ export class CalendarioPage implements OnInit {
     };
   }
 
-  // Limpar seleção
   limparSelecao() {
     this.dataSelecionada = '';
     this.dadosDia = [];

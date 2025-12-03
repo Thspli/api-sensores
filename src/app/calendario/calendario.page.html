@@ -27,9 +27,7 @@
           <div>
             <p><strong>Navegue pelo calendário</strong></p>
             <p class="subtitle">
-              Os dias com <span class="badge-verde">verde</span> têm poucos registros, 
-              <span class="badge-laranja">laranja</span> têm médios e 
-              <span class="badge-vermelho">vermelho</span> têm muitos registros.
+              Os dias de forma <span class="badge-verde">detalhada</span> na palma da sua mão, basta alguns cliques.
             </p>
           </div>
         </div>
@@ -106,7 +104,7 @@
       </div>
     </div>
 
-    <!-- Grid de Sensores -->
+    <!-- Grid de Sensores - ESTILO SIMPLIFICADO -->
     <ion-grid *ngIf="!carregando && dadosDia.length > 0 && mostrarDetalhes">
       <ion-row>
         <ion-col size="12" size-md="6" size-lg="4" 
@@ -141,71 +139,57 @@
               </div>
             </ion-card-header>
             
-            <!-- Conteúdo do Card -->
+            <!-- Conteúdo do Card - APENAS CAMPOS FUTUROS -->
             <ion-card-content>
               
-              <!-- Grid de Medições Principais -->
-              <div class="medicoes-principais" *ngIf="dado.turbidez || dado.ph || dado.cloro || dado.nivel_agua">
+              <!-- Medições principais - SEM TEMPERATURA E UMIDADE -->
+              <div class="medicoes-principais">
                 
-                <div class="medicao-item" *ngIf="dado.turbidez">
+                <!-- TURBIDEZ -->
+                <div class="medicao-item">
                   <div class="medicao-header">
                     <ion-icon name="contrast-outline" color="warning"></ion-icon>
-                    <span class="medicao-label">Turbidez</span>
                   </div>
                   <div class="medicao-valor">
-                    {{ dado.turbidez }}<span class="unidade">NTU</span>
+                    <span style="font-size: 11px; color: rgba(255,255,255,0.5); text-transform: uppercase; letter-spacing: 1px; font-weight: 600; display: block; margin-bottom: 4px;">TURBIDEZ</span>
+                    {{ dado.turbidez || 'N/D' }}
                   </div>
                 </div>
                 
-                <div class="medicao-item" *ngIf="dado.ph">
+                <!-- PH -->
+                <div class="medicao-item">
                   <div class="medicao-header">
                     <ion-icon name="flask-outline" color="success"></ion-icon>
-                    <span class="medicao-label">pH</span>
                   </div>
                   <div class="medicao-valor">
-                    {{ dado.ph }}<span class="unidade">pH</span>
+                    <span style="font-size: 11px; color: rgba(255,255,255,0.5); text-transform: uppercase; letter-spacing: 1px; font-weight: 600; display: block; margin-bottom: 4px;">PH</span>
+                    {{ dado.ph || 'N/D' }}
                   </div>
                 </div>
                 
-                <div class="medicao-item" *ngIf="dado.cloro">
+                <!-- CLORO -->
+                <div class="medicao-item">
                   <div class="medicao-header">
                     <ion-icon name="beaker-outline" color="tertiary"></ion-icon>
-                    <span class="medicao-label">Cloro</span>
                   </div>
                   <div class="medicao-valor">
-                    {{ dado.cloro }}<span class="unidade">mg/L</span>
+                    <span style="font-size: 11px; color: rgba(255,255,255,0.5); text-transform: uppercase; letter-spacing: 1px; font-weight: 600; display: block; margin-bottom: 4px;">CLORO</span>
+                    {{ dado.cloro || 'N/D' }}
                   </div>
                 </div>
                 
-                <div class="medicao-item" *ngIf="dado.nivel_agua">
+                <!-- NÍVEL ÁGUA -->
+                <div class="medicao-item">
                   <div class="medicao-header">
                     <ion-icon name="analytics-outline" color="secondary"></ion-icon>
-                    <span class="medicao-label">Nível</span>
                   </div>
                   <div class="medicao-valor">
-                    {{ dado.nivel_agua }}<span class="unidade">cm</span>
+                    <span style="font-size: 11px; color: rgba(255,255,255,0.5); text-transform: uppercase; letter-spacing: 1px; font-weight: 600; display: block; margin-bottom: 4px;">NÍVEL ÁGUA</span>
+                    {{ dado.nivel_agua || 'N/D' }}
                   </div>
                 </div>
                 
               </div>
-
-              <!-- Propriedades Customizadas -->
-              <ion-list 
-                class="propriedades-customizadas" 
-                lines="none" 
-                *ngIf="getPropriedadesCustomizadas(dado).length > 0">
-                <ion-item *ngFor="let prop of getPropriedadesCustomizadas(dado)">
-                  <ion-icon 
-                    [name]="getIconePropriedade(prop.chave)" 
-                    slot="start" 
-                    [color]="getCorPropriedade(prop.valor)">
-                  </ion-icon>
-                  <ion-label>
-                    <p>{{ prop.chave }}</p>
-                    <h3>{{ prop.valor }}</h3>
-                  </ion-label>
-                </ion-item>
-              </ion-list>
               
             </ion-card-content>
           </ion-card>
