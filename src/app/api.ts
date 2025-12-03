@@ -8,7 +8,7 @@ import { Observable } from 'rxjs';
 })
 export class Api {
   private apiUrl: string = 'https://esp32-mongodb-idev3.onrender.com';
-  private collection: string = 'thalisson';
+  private collection: string = 'gasparzinho';
 
   constructor(private http: HttpClient) {}
 
