@@ -2,6 +2,7 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Api } from '../api';
 import { Subscription, interval } from 'rxjs';
 import { switchMap } from 'rxjs/operators';
+import { DataNormalizer } from '../utils/data-normalizer'; // IMPORTAR
 
 @Component({
   selector: 'app-dashboard',
@@ -15,15 +16,14 @@ export class DashboardPage implements OnInit, OnDestroy {
   public dadosSensores: any[] = [];
   public registroMaisRecente: any = null;
   public outrosRegistros: any[] = [];
-  public registroExpandido: number | null = null; // Index do registro expandido
-  public registroColapsando: number | null = null; // Index do registro sendo colapsado
+  public registroExpandido: number | null = null;
+  public registroColapsando: number | null = null;
   public dadosHistorico: any[] = [];
   public ultimaAtualizacao?: Date;
   public dataMaxima: string = new Date().toISOString();
   
-  // Controle do polling
   private pollingSubscription?: Subscription;
-  private intervaloAtualizacao: number = 30000; // 30 segundos
+  private intervaloAtualizacao: number = 30000;
   public atualizacaoAutomatica: boolean = true;
   public carregando: boolean = false;
   public carregandoHistorico: boolean = false;
@@ -47,9 +47,11 @@ export class DashboardPage implements OnInit, OnDestroy {
         )
         .subscribe({
           next: (data) => {
-            this.processarDados(data);
+            // ✅ NORMALIZAR OS DADOS AQUI
+            const dadosNormalizados = DataNormalizer.normalizarRegistros(data);
+            this.processarDados(dadosNormalizados);
             this.ultimaAtualizacao = new Date();
-            console.log('Dados atualizados automaticamente:', data);
+            console.log('✅ Dados normalizados e atualizados:', dadosNormalizados);
           },
           error: (err) => {
             console.error('Erro na atualização automática:', err);
@@ -79,10 +81,19 @@ export class DashboardPage implements OnInit, OnDestroy {
     this.carregando = true;
     this.apiService.getSensores().subscribe({
       next: (data) => {
-        this.processarDados(data);
+        // ✅ NORMALIZAR OS DADOS AQUI
+        const dadosNormalizados = DataNormalizer.normalizarRegistros(data);
+        
+        // 🔍 DIAGNÓSTICO (apenas para debug, pode remover depois)
+        const diagnostico = DataNormalizer.diagnosticarDados(data);
+        if (diagnostico.phForaEscala > 0 || diagnostico.turbidezForaEscala > 0) {
+          console.log('📊 Diagnóstico de normalização:', diagnostico);
+        }
+        
+        this.processarDados(dadosNormalizados);
         this.ultimaAtualizacao = new Date();
         this.carregando = false;
-        console.log('Dados carregados:', data);
+        console.log('✅ Dados carregados e normalizados:', dadosNormalizados);
       },
       error: (err) => {
         console.error('Erro ao carregar dados dos sensores', err);
@@ -91,19 +102,16 @@ export class DashboardPage implements OnInit, OnDestroy {
     });
   }
 
-  // Processar dados: separar o mais recente dos outros
   processarDados(data: any[]): void {
     this.dadosSensores = data;
     
     if (data && data.length > 0) {
-      // Ordenar por timestamp (mais recente primeiro)
       const dadosOrdenados = [...data].sort((a, b) => {
         const dataA = new Date(a.timestamp || a.data).getTime();
         const dataB = new Date(b.timestamp || b.data).getTime();
-        return dataB - dataA; // Decrescente (mais recente primeiro)
+        return dataB - dataA;
       });
 
-      // Separar o mais recente
       this.registroMaisRecente = dadosOrdenados[0];
       this.outrosRegistros = dadosOrdenados.slice(1);
     } else {
@@ -112,17 +120,14 @@ export class DashboardPage implements OnInit, OnDestroy {
     }
   }
 
-  // Toggle expansão de um registro
   toggleRegistro(index: number): void {
     if (this.registroExpandido === index) {
-      // Se clicar no registro já expandido, colapsar com animação
       this.registroColapsando = index;
       setTimeout(() => {
         this.registroExpandido = null;
         this.registroColapsando = null;
-      }, 300); // Tempo da animação
+      }, 300);
     } else {
-      // Se já houver outro registro expandido, colapsar primeiro
       if (this.registroExpandido !== null) {
         this.registroColapsando = this.registroExpandido;
         setTimeout(() => {
@@ -130,18 +135,15 @@ export class DashboardPage implements OnInit, OnDestroy {
           this.registroColapsando = null;
         }, 300);
       } else {
-        // Se nenhum registro estiver expandido, expandir imediatamente
         this.registroExpandido = index;
       }
     }
   }
 
-  // Verificar se registro está expandido
   isExpandido(index: number): boolean {
     return this.registroExpandido === index;
   }
 
-  // Verificar se registro está colapsando
   isColapsando(index: number): boolean {
     return this.registroColapsando === index;
   }
@@ -155,9 +157,10 @@ export class DashboardPage implements OnInit, OnDestroy {
     this.carregandoHistorico = true;
     this.apiService.getDadosPorData(dataSelecionada).subscribe({
       next: (data) => {
-        this.dadosHistorico = data;
+        // ✅ NORMALIZAR OS DADOS HISTÓRICOS
+        this.dadosHistorico = DataNormalizer.normalizarRegistros(data);
         this.carregandoHistorico = false;
-        console.log('Dados por data:', data);
+        console.log('✅ Dados históricos normalizados:', this.dadosHistorico);
       },
       error: (err) => {
         console.error('Erro ao carregar dados por data', err);

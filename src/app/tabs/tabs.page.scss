@@ -316,7 +316,7 @@ ion-tab-button.tab-selected {
 }
 
 // Efeito de ondulação ao tocar
-ion-tab-button:active::before {
+ion-tab-button:active::before { 
   animation: ripple 0.6s ease-out;
 }
 
