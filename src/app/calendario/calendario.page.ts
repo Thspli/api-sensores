@@ -5,6 +5,7 @@ import { DateClickArg } from '@fullcalendar/interaction';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import ptBrLocale from '@fullcalendar/core/locales/pt-br';
+import { DataNormalizer } from '../utils/data-normalizer'; // IMPORTAR
 
 interface EventoCalendario {
   date: string;
@@ -30,7 +31,6 @@ export class CalendarioPage implements OnInit {
   public mostrarDetalhes: boolean = false;
   public animacaoAtiva: boolean = false;
 
-  // Configurações do FullCalendar
   calendarOptions: CalendarOptions = {
     plugins: [dayGridPlugin, interactionPlugin],
     initialView: 'dayGridMonth',
@@ -55,7 +55,6 @@ export class CalendarioPage implements OnInit {
     moreLinkText: 'mais',
     eventClassNames: 'custom-event',
     dayCellClassNames: 'custom-day-cell',
-    // Melhorias adicionais
     weekends: true,
     editable: false,
     selectable: true,
@@ -71,34 +70,38 @@ export class CalendarioPage implements OnInit {
       this.animacaoAtiva = true;
     }, 100);
     
-    // Carregar eventos reais da API
     this.carregarEventosDaAPI();
   }
 
-  // MÉTODO PARA INTEGRAÇÃO COM API REAL
   carregarEventosDaAPI() {
-    // Opção 1: Se sua API retorna todos os dados e você quer contar por dia
+    console.log('🔍 Buscando dados da API...');
+    
     this.apiService.getSensores().subscribe({
       next: (dados: any[]) => {
-        const eventosPorData = this.processarDadosParaCalendario(dados);
-        this.calendarOptions.events = eventosPorData;
-        console.log('Eventos carregados:', eventosPorData);
+        console.log('✅ Dados recebidos da API:', dados);
+        
+        if (dados && dados.length > 0) {
+          // ✅ NORMALIZAR OS DADOS ANTES DE PROCESSAR
+          const dadosNormalizados = DataNormalizer.normalizarRegistros(dados);
+          const eventosPorData = this.processarDadosParaCalendario(dadosNormalizados);
+          this.calendarOptions.events = eventosPorData;
+          console.log('✅ Eventos normalizados carregados:', eventosPorData);
+        } else {
+          console.warn('⚠️ API retornou vazio, usando dados mockados');
+          this.carregarEventosMockados();
+        }
       },
       error: (err) => {
-        console.error('Erro ao carregar eventos:', err);
-        // Fallback para dados mockados em caso de erro
+        console.error('❌ Erro ao carregar eventos:', err);
         this.carregarEventosMockados();
       }
     });
   }
 
-  // Processar dados da API para formato do calendário
   processarDadosParaCalendario(dados: any[]): EventoCalendario[] {
-    // Agrupar dados por data
     const dadosPorData: { [key: string]: number } = {};
     
     dados.forEach(item => {
-      // Extrair a data do timestamp (formato: YYYY-MM-DD)
       const timestamp = item.timestamp || item.data;
       if (timestamp) {
         const data = new Date(timestamp).toISOString().split('T')[0];
@@ -106,12 +109,10 @@ export class CalendarioPage implements OnInit {
       }
     });
 
-    // Converter para formato de eventos do FullCalendar
     const eventos: EventoCalendario[] = Object.entries(dadosPorData).map(([data, quantidade]) => {
-      // Definir cor baseada na quantidade
-      let cor = '#10b981'; // Verde (poucos)
-      if (quantidade > 10) cor = '#ef4444'; // Vermelho (muitos)
-      else if (quantidade > 5) cor = '#fb923c'; // Laranja (médio)
+      let cor = '#10b981';
+      if (quantidade > 10) cor = '#ef4444';
+      else if (quantidade > 5) cor = '#fb923c';
 
       return {
         date: data,
@@ -127,7 +128,6 @@ export class CalendarioPage implements OnInit {
     return eventos;
   }
 
-  // MÉTODO MOCKADO - Usar apenas para testes
   carregarEventosMockados() {
     const eventos: EventoCalendario[] = [];
     const hoje = new Date();
@@ -157,14 +157,12 @@ export class CalendarioPage implements OnInit {
     this.calendarOptions.events = eventos;
   }
 
-  // Quando clicar em uma data
   handleDateClick(arg: DateClickArg) {
     console.log('Data clicada:', arg.dateStr);
     this.dataSelecionada = arg.dateStr;
     this.carregarDadosDoDia(arg.dateStr);
   }
 
-  // Quando clicar em um evento (dia com registros)
   handleEventClick(arg: EventClickArg) {
     const data = arg.event.startStr;
     const quantidade = arg.event.extendedProps['quantidade'];
@@ -174,21 +172,23 @@ export class CalendarioPage implements OnInit {
     this.carregarDadosDoDia(data);
   }
 
-  // Carregar dados de um dia específico
   carregarDadosDoDia(data: string) {
     this.carregando = true;
     this.mostrarDetalhes = false;
 
     this.apiService.getDadosPorData(data).subscribe({
       next: (dados: any) => {
-        this.dadosDia = Array.isArray(dados) ? dados : [];
+        // ✅ NORMALIZAR OS DADOS DO DIA
+        const dadosArray = Array.isArray(dados) ? dados : [];
+        this.dadosDia = DataNormalizer.normalizarRegistros(dadosArray);
+        
         this.carregando = false;
         
         setTimeout(() => {
           this.mostrarDetalhes = true;
         }, 100);
         
-        console.log('Dados do dia carregados:', this.dadosDia);
+        console.log('✅ Dados do dia normalizados:', this.dadosDia);
       },
       error: (err: any) => {
         console.error('Erro ao carregar dados:', err);
@@ -199,7 +199,6 @@ export class CalendarioPage implements OnInit {
     });
   }
 
-  // Recarregar eventos do calendário
   recarregarEventos() {
     this.carregarEventosDaAPI();
   }
