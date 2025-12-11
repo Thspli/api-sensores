@@ -56,14 +56,14 @@
       </ion-card-content>
     </ion-card>
 
-    <!-- Grid de Gráficos -->
+    <!-- Grid de Gráficos - APENAS 3 GRÁFICOS -->
     <div class="preview-grid">
       
       <!-- Gráfico de Linha - Turbidez ao longo do tempo -->
       <ion-card class="preview-card chart-card">
         <ion-card-header>
           <ion-card-title>
-            <ion-icon name="trending-up-outline" color="primary"></ion-icon>
+            <ion-icon name="contrast-outline" color="warning"></ion-icon>
             Turbidez ao Longo do Tempo
           </ion-card-title>
           <ion-card-subtitle>Medições em NTU</ion-card-subtitle>
@@ -79,7 +79,7 @@
       <ion-card class="preview-card chart-card">
         <ion-card-header>
           <ion-card-title>
-            <ion-icon name="water-outline" color="success"></ion-icon>
+            <ion-icon name="flask-outline" color="success"></ion-icon>
             pH ao Longo do Tempo
           </ion-card-title>
           <ion-card-subtitle>Nível de pH</ion-card-subtitle>
@@ -91,41 +91,25 @@
         </ion-card-content>
       </ion-card>
 
-      <!-- Gráfico de Barras - Comparação de Sensores -->
+      <!-- Gráfico de Linha - Nível da Água -->
       <ion-card class="preview-card chart-card">
         <ion-card-header>
           <ion-card-title>
-            <ion-icon name="bar-chart-outline" color="secondary"></ion-icon>
-            Comparação de Sensores
+            <ion-icon name="analytics-outline" color="secondary"></ion-icon>
+            Nível da Água ao Longo do Tempo
           </ion-card-title>
-          <ion-card-subtitle>Média das últimas leituras</ion-card-subtitle>
+          <ion-card-subtitle>Medições em cm</ion-card-subtitle>
         </ion-card-header>
         <ion-card-content>
           <div class="chart-container">
-            <canvas #comparacaoChart></canvas>
-          </div>
-        </ion-card-content>
-      </ion-card>
-
-      <!-- Gráfico de Rosca - Distribuição do Cloro -->
-      <ion-card class="preview-card chart-card">
-        <ion-card-header>
-          <ion-card-title>
-            <ion-icon name="pie-chart-outline" color="warning"></ion-icon>
-            Níveis de Cloro
-          </ion-card-title>
-          <ion-card-subtitle>Distribuição percentual</ion-card-subtitle>
-        </ion-card-header>
-        <ion-card-content>
-          <div class="chart-container">
-            <canvas #cloroChart></canvas>
+            <canvas #nivelChart></canvas>
           </div>
         </ion-card-content>
       </ion-card>
 
     </div>
 
-    <!-- Cards de Estatísticas -->
+    <!-- Cards de Estatísticas - APENAS 3 CARDS -->
     <div class="stats-section">
       <h2 class="section-title">
         <ion-icon name="stats-chart-outline"></ion-icon>
@@ -135,8 +119,8 @@
       <div class="stats-grid">
         <ion-card class="stat-card">
           <ion-card-content>
-            <div class="stat-icon" style="background: rgba(59, 130, 246, 0.1);">
-              <ion-icon name="water" color="primary"></ion-icon>
+            <div class="stat-icon" style="background: rgba(251, 146, 60, 0.1);">
+              <ion-icon name="contrast" color="warning"></ion-icon>
             </div>
             <div class="stat-info">
               <p class="stat-label">Turbidez Média</p>
@@ -160,22 +144,6 @@
               <p class="stat-change" [class.positive]="estatisticas.phTendencia > 0">
                 <ion-icon [name]="estatisticas.phTendencia > 0 ? 'arrow-up' : 'arrow-down'"></ion-icon>
                 {{ estatisticas.phTendencia }}%
-              </p>
-            </div>
-          </ion-card-content>
-        </ion-card>
-
-        <ion-card class="stat-card">
-          <ion-card-content>
-            <div class="stat-icon" style="background: rgba(251, 146, 60, 0.1);">
-              <ion-icon name="beaker" color="warning"></ion-icon>
-            </div>
-            <div class="stat-info">
-              <p class="stat-label">Cloro Médio</p>
-              <h3 class="stat-value">{{ estatisticas.cloroMedio | number:'1.2-2' }} <span class="unit">mg/L</span></h3>
-              <p class="stat-change" [class.positive]="estatisticas.cloroTendencia > 0">
-                <ion-icon [name]="estatisticas.cloroTendencia > 0 ? 'arrow-up' : 'arrow-down'"></ion-icon>
-                {{ estatisticas.cloroTendencia }}%
               </p>
             </div>
           </ion-card-content>

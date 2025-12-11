@@ -62,7 +62,7 @@
       </div>
     </div>
 
-    <!-- Grid de Sensores - ESTILO SIMPLIFICADO -->
+    <!-- Grid de Sensores - 4 CAMPOS -->
     <ion-grid *ngIf="!carregando && dadosDia.length > 0 && mostrarDetalhes">
       <ion-row>
         <ion-col size="12" size-md="6" size-lg="4" 
@@ -97,10 +97,10 @@
               </div>
             </ion-card-header>
             
-            <!-- Conteúdo do Card - APENAS CAMPOS FUTUROS -->
+            <!-- Conteúdo do Card - 4 CAMPOS -->
             <ion-card-content>
               
-              <!-- Medições principais - SEM TEMPERATURA E UMIDADE -->
+              <!-- Medições principais -->
               <div class="medicoes-principais">
                 
                 <!-- TURBIDEZ -->
@@ -125,17 +125,6 @@
                   </div>
                 </div>
                 
-                <!-- CLORO -->
-                <div class="medicao-item">
-                  <div class="medicao-header">
-                    <ion-icon name="beaker-outline" color="tertiary"></ion-icon>
-                  </div>
-                  <div class="medicao-valor">
-                    <span style="font-size: 11px; color: rgba(255,255,255,0.5); text-transform: uppercase; letter-spacing: 1px; font-weight: 600; display: block; margin-bottom: 4px;">CLORO</span>
-                    {{ dado.cloro || 'N/D' }}
-                  </div>
-                </div>
-                
                 <!-- NÍVEL ÁGUA -->
                 <div class="medicao-item">
                   <div class="medicao-header">
@@ -146,6 +135,7 @@
                     {{ dado.nivel_agua || 'N/D' }}
                   </div>
                 </div>
+              
                 
               </div>
               

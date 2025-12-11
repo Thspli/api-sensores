@@ -61,7 +61,7 @@
   <!-- Loading Spinner -->
   <ion-spinner *ngIf="carregando && !registroMaisRecente" name="crescent" class="spinner-center"></ion-spinner>
 
-  <!-- REGISTRO MAIS RECENTE (DESTACADO) -->
+  <!-- REGISTRO MAIS RECENTE (DESTACADO) - APENAS 3 MEDIÇÕES -->
   <div *ngIf="registroMaisRecente && !carregando" class="registro-destaque-container">
     <div class="sensores-header">
       <h2>
@@ -109,8 +109,8 @@
           <span>{{ formatarData(registroMaisRecente.timestamp || registroMaisRecente.data) }}</span>
         </div>
         
-        <!-- Grid de Medições -->
-        <div class="medicoes-grid">
+        <!-- Grid de Medições - APENAS 3 -->
+        <div class="medicoes-grid tres-colunas">
           
           <!-- Turbidez -->
           <div class="medicao-item" [class.indisponivel]="!registroMaisRecente.turbidez">
@@ -136,18 +136,6 @@
             </div>
           </div>
           
-          <!-- Cloro -->
-          <div class="medicao-item" [class.indisponivel]="!registroMaisRecente.cloro">
-            <div class="medicao-header">
-              <ion-icon name="beaker-outline" color="tertiary"></ion-icon>
-              <span class="medicao-label">Cloro</span>
-            </div>
-            <div class="medicao-valor">
-              <span *ngIf="registroMaisRecente.cloro">{{ registroMaisRecente.cloro }}<span class="unidade">mg/L</span></span>
-              <span *ngIf="!registroMaisRecente.cloro">N/D</span>
-            </div>
-          </div>
-          
           <!-- Nível da Água -->
           <div class="medicao-item" [class.indisponivel]="!registroMaisRecente.nivel_agua">
             <div class="medicao-header">
@@ -166,7 +154,7 @@
     </ion-card>
   </div>
 
-  <!-- TABELA DE OUTROS REGISTROS -->
+  <!-- TABELA DE OUTROS REGISTROS - APENAS 3 VALORES -->
   <div *ngIf="outrosRegistros.length > 0 && !carregando" class="outros-registros-container">
     <div class="sensores-header">
       <h2>
@@ -201,7 +189,7 @@
               </div>
             </div>
             
-            <!-- Valores Rápidos -->
+            <!-- Valores Rápidos - APENAS 3 -->
             <div class="valores-rapidos">
               <span *ngIf="registro.turbidez" class="valor-badge turbidez">
                 <ion-icon name="contrast-outline"></ion-icon>
@@ -211,9 +199,9 @@
                 <ion-icon name="flask-outline"></ion-icon>
                 {{ registro.ph }}
               </span>
-              <span *ngIf="registro.cloro" class="valor-badge cloro">
-                <ion-icon name="beaker-outline"></ion-icon>
-                {{ registro.cloro }}
+              <span *ngIf="registro.nivel_agua" class="valor-badge nivel">
+                <ion-icon name="analytics-outline"></ion-icon>
+                {{ registro.nivel_agua }}
               </span>
             </div>
 
@@ -224,7 +212,7 @@
             </ion-icon>
           </div>
 
-          <!-- Visualização Expandida (condicional) -->
+          <!-- Visualização Expandida (condicional) - APENAS 3 -->
           <div class="registro-expandido" *ngIf="isExpandido(i)">
             <div class="divider"></div>
             
@@ -246,8 +234,8 @@
               <span>{{ formatarData(registro.timestamp || registro.data) }}</span>
             </div>
 
-            <!-- Grid de Medições Detalhado -->
-            <div class="medicoes-grid-expandido">
+            <!-- Grid de Medições Detalhado - APENAS 3 -->
+            <div class="medicoes-grid-expandido tres-itens">
               
               <!-- Turbidez -->
               <div class="medicao-item-expandido" *ngIf="registro.turbidez">
@@ -264,15 +252,6 @@
                 <div class="medicao-detalhes">
                   <span class="label">pH</span>
                   <span class="valor">{{ registro.ph }} <span class="unidade">pH</span></span>
-                </div>
-              </div>
-              
-              <!-- Cloro -->
-              <div class="medicao-item-expandido" *ngIf="registro.cloro">
-                <ion-icon name="beaker-outline" color="tertiary"></ion-icon>
-                <div class="medicao-detalhes">
-                  <span class="label">Cloro</span>
-                  <span class="valor">{{ registro.cloro }} <span class="unidade">mg/L</span></span>
                 </div>
               </div>
               

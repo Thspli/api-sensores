@@ -29,3 +29,19 @@ export class Api {
     );
   }
 }
+
+// Interface recomendada para tipagem (opcional)
+export interface SensorData {
+  _id?: string;
+  nome?: string;
+  tipo?: string;
+  localizacao?: string;
+  timestamp?: string;
+  data?: string;
+  status?: string;
+  turbidez?: number;
+  ph?: number;
+  cloro?: number;
+  nivel_agua?: number;
+  umidade_terra?: number; // NOVO CAMPO
+}
