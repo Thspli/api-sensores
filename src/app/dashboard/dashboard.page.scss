@@ -52,12 +52,16 @@ ion-content {
 }
 
 @keyframes gradientShift {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: translate(0, 0) rotate(0deg);
   }
+
   33% {
     transform: translate(30px, -50px) rotate(120deg);
   }
+
   66% {
     transform: translate(-20px, 20px) rotate(240deg);
   }
@@ -140,10 +144,13 @@ ion-content {
 }
 
 @keyframes pulse {
-  0%, 100% {
+
+  0%,
+  100% {
     opacity: 1;
     transform: scale(1);
   }
+
   50% {
     opacity: 0.7;
     transform: scale(1.1);
@@ -252,7 +259,7 @@ ion-content {
       &[color="success"] {
         --background: linear-gradient(135deg, #10b981 0%, #059669 100%);
         --box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
-        
+
         &:hover {
           --box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
           transform: translateY(-2px);
@@ -262,7 +269,7 @@ ion-content {
       &[color="medium"] {
         --background: linear-gradient(135deg, #64748b 0%, #475569 100%);
         --box-shadow: 0 4px 12px rgba(100, 116, 139, 0.3);
-        
+
         &:hover {
           --box-shadow: 0 6px 20px rgba(100, 116, 139, 0.4);
           transform: translateY(-2px);
@@ -272,7 +279,7 @@ ion-content {
       &[color="primary"] {
         --background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
         --box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
-        
+
         &:hover {
           --box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
           transform: translateY(-2px);
@@ -325,7 +332,7 @@ ion-content {
     border-radius: 16px;
     background: linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(139, 92, 246, 0.15) 100%);
     backdrop-filter: blur(20px);
-    box-shadow: 
+    box-shadow:
       0 10px 40px rgba(59, 130, 246, 0.4),
       0 0 0 2px rgba(59, 130, 246, 0.3);
     border: 2px solid rgba(59, 130, 246, 0.5);
@@ -519,22 +526,28 @@ ion-content {
 }
 
 @keyframes cardPulse {
-  0%, 100% {
-    box-shadow: 
+
+  0%,
+  100% {
+    box-shadow:
       0 10px 40px rgba(59, 130, 246, 0.4),
       0 0 0 2px rgba(59, 130, 246, 0.3);
   }
+
   50% {
-    box-shadow: 
+    box-shadow:
       0 14px 56px rgba(59, 130, 246, 0.5),
       0 0 0 3px rgba(59, 130, 246, 0.5);
   }
 }
 
 @keyframes iconFloat {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: translateY(0);
   }
+
   50% {
     transform: translateY(-5px);
   }
@@ -544,6 +557,7 @@ ion-content {
   0% {
     background-position: 0% 0%;
   }
+
   100% {
     background-position: 200% 0%;
   }
@@ -633,6 +647,9 @@ ion-content {
           }
         }
 
+        // Adicione esta seção no arquivo dashboard.page.scss existente
+        // Localize a seção .valores-rapidos e substitua por:
+
         .valores-rapidos {
           display: flex;
           gap: 8px;
@@ -669,6 +686,59 @@ ion-content {
               background: rgba(139, 92, 246, 0.3);
               border: 1px solid rgba(139, 92, 246, 0.5);
               color: #a78bfa;
+            }
+
+            // NOVO: Badge de Umidade da Terra
+            &.umidade {
+              background: rgba(100, 116, 139, 0.3);
+              border: 1px solid rgba(100, 116, 139, 0.5);
+              color: #94a3b8;
+            }
+          }
+        }
+
+        // Ajuste no grid de medições para 5 itens (2-2-1 em mobile, 3-2 em tablet)
+        .medicoes-grid {
+          display: grid;
+          grid-template-columns: repeat(2, 1fr);
+          gap: 10px;
+
+          // No destaque, o 5º item ocupa toda a largura
+          .medicao-item:nth-child(5) {
+            grid-column: 1 / -1;
+          }
+        }
+
+        @media (min-width: 768px) {
+          .medicoes-grid {
+            grid-template-columns: repeat(3, 1fr);
+
+            // Em telas maiores, os últimos 2 itens ficam centralizados
+            .medicao-item:nth-child(4),
+            .medicao-item:nth-child(5) {
+              grid-column: auto;
+            }
+          }
+        }
+
+        // Ajuste no grid expandido para 5 itens
+        .medicoes-grid-expandido {
+          display: grid;
+          grid-template-columns: repeat(2, 1fr);
+          gap: 12px;
+
+          // O 5º item ocupa toda a largura em mobile
+          .medicao-item-expandido:nth-child(5) {
+            grid-column: 1 / -1;
+          }
+        }
+
+        @media (min-width: 768px) {
+          .medicoes-grid-expandido {
+            grid-template-columns: repeat(3, 1fr);
+
+            .medicao-item-expandido:nth-child(5) {
+              grid-column: auto;
             }
           }
         }
@@ -822,6 +892,7 @@ ion-content {
     max-height: 0;
     transform: translateY(-10px);
   }
+
   to {
     opacity: 1;
     max-height: 500px;
@@ -835,6 +906,7 @@ ion-content {
     max-height: 500px;
     transform: translateY(0);
   }
+
   to {
     opacity: 0;
     max-height: 0;
@@ -906,6 +978,7 @@ ion-content {
     opacity: 0;
     transform: translateY(-40px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -917,6 +990,7 @@ ion-content {
     opacity: 0;
     transform: translateY(30px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -949,7 +1023,7 @@ ion-content {
 
   .status-actions {
     width: 100%;
-    
+
     ion-button {
       flex: 1;
     }
@@ -968,8 +1042,39 @@ ion-content {
   .medicoes-grid {
     grid-template-columns: repeat(2, 1fr) !important;
   }
-  
+
   .medicoes-grid-expandido {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+// Grid de 3 colunas para as medições
+.medicoes-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+// Grid expandido também com 3 itens
+.medicoes-grid-expandido.tres-itens {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+// Badge de nível (adicionar ao estilo dos badges)
+.valor-badge.nivel {
+  background: rgba(139, 92, 246, 0.3);
+  border: 1px solid rgba(139, 92, 246, 0.5);
+  color: #a78bfa;
+}
+
+// Responsividade para 3 colunas
+@media (max-width: 768px) {
+  .medicoes-grid {
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 8px;
+  }
+  
+  .medicoes-grid-expandido.tres-itens {
     grid-template-columns: 1fr !important;
   }
 }

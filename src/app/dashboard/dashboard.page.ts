@@ -2,7 +2,6 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Api } from '../api';
 import { Subscription, interval } from 'rxjs';
 import { switchMap } from 'rxjs/operators';
-import { DataNormalizer } from '../utils/data-normalizer'; // IMPORTAR
 
 @Component({
   selector: 'app-dashboard',
@@ -22,8 +21,9 @@ export class DashboardPage implements OnInit, OnDestroy {
   public ultimaAtualizacao?: Date;
   public dataMaxima: string = new Date().toISOString();
   
+  // Controle do polling
   private pollingSubscription?: Subscription;
-  private intervaloAtualizacao: number = 30000;
+  private intervaloAtualizacao: number = 30000; // 30 segundos
   public atualizacaoAutomatica: boolean = true;
   public carregando: boolean = false;
   public carregandoHistorico: boolean = false;
@@ -47,11 +47,9 @@ export class DashboardPage implements OnInit, OnDestroy {
         )
         .subscribe({
           next: (data) => {
-            // ✅ NORMALIZAR OS DADOS AQUI
-            const dadosNormalizados = DataNormalizer.normalizarRegistros(data);
-            this.processarDados(dadosNormalizados);
+            this.processarDados(data);
             this.ultimaAtualizacao = new Date();
-            console.log('✅ Dados normalizados e atualizados:', dadosNormalizados);
+            console.log('Dados atualizados automaticamente:', data);
           },
           error: (err) => {
             console.error('Erro na atualização automática:', err);
@@ -81,19 +79,10 @@ export class DashboardPage implements OnInit, OnDestroy {
     this.carregando = true;
     this.apiService.getSensores().subscribe({
       next: (data) => {
-        // ✅ NORMALIZAR OS DADOS AQUI
-        const dadosNormalizados = DataNormalizer.normalizarRegistros(data);
-        
-        // 🔍 DIAGNÓSTICO (apenas para debug, pode remover depois)
-        const diagnostico = DataNormalizer.diagnosticarDados(data);
-        if (diagnostico.phForaEscala > 0 || diagnostico.turbidezForaEscala > 0) {
-          console.log('📊 Diagnóstico de normalização:', diagnostico);
-        }
-        
-        this.processarDados(dadosNormalizados);
+        this.processarDados(data);
         this.ultimaAtualizacao = new Date();
         this.carregando = false;
-        console.log('✅ Dados carregados e normalizados:', dadosNormalizados);
+        console.log('Dados carregados:', data);
       },
       error: (err) => {
         console.error('Erro ao carregar dados dos sensores', err);
@@ -102,16 +91,19 @@ export class DashboardPage implements OnInit, OnDestroy {
     });
   }
 
+  // Processar dados: separar o mais recente dos outros
   processarDados(data: any[]): void {
     this.dadosSensores = data;
     
     if (data && data.length > 0) {
+      // Ordenar por timestamp (mais recente primeiro)
       const dadosOrdenados = [...data].sort((a, b) => {
         const dataA = new Date(a.timestamp || a.data).getTime();
         const dataB = new Date(b.timestamp || b.data).getTime();
-        return dataB - dataA;
+        return dataB - dataA; // Decrescente (mais recente primeiro)
       });
 
+      // Separar o mais recente
       this.registroMaisRecente = dadosOrdenados[0];
       this.outrosRegistros = dadosOrdenados.slice(1);
     } else {
@@ -120,14 +112,17 @@ export class DashboardPage implements OnInit, OnDestroy {
     }
   }
 
+  // Toggle expansão de um registro
   toggleRegistro(index: number): void {
     if (this.registroExpandido === index) {
+      // Se clicar no registro já expandido, colapsar com animação
       this.registroColapsando = index;
       setTimeout(() => {
         this.registroExpandido = null;
         this.registroColapsando = null;
-      }, 300);
+      }, 300); // Tempo da animação
     } else {
+      // Se já houver outro registro expandido, colapsar primeiro
       if (this.registroExpandido !== null) {
         this.registroColapsando = this.registroExpandido;
         setTimeout(() => {
@@ -135,15 +130,18 @@ export class DashboardPage implements OnInit, OnDestroy {
           this.registroColapsando = null;
         }, 300);
       } else {
+        // Se nenhum registro estiver expandido, expandir imediatamente
         this.registroExpandido = index;
       }
     }
   }
 
+  // Verificar se registro está expandido
   isExpandido(index: number): boolean {
     return this.registroExpandido === index;
   }
 
+  // Verificar se registro está colapsando
   isColapsando(index: number): boolean {
     return this.registroColapsando === index;
   }
@@ -157,10 +155,9 @@ export class DashboardPage implements OnInit, OnDestroy {
     this.carregandoHistorico = true;
     this.apiService.getDadosPorData(dataSelecionada).subscribe({
       next: (data) => {
-        // ✅ NORMALIZAR OS DADOS HISTÓRICOS
-        this.dadosHistorico = DataNormalizer.normalizarRegistros(data);
+        this.dadosHistorico = data;
         this.carregandoHistorico = false;
-        console.log('✅ Dados históricos normalizados:', this.dadosHistorico);
+        console.log('Dados por data:', data);
       },
       error: (err) => {
         console.error('Erro ao carregar dados por data', err);
@@ -191,7 +188,7 @@ export class DashboardPage implements OnInit, OnDestroy {
   }
 
   getPropriedadesCustomizadas(sensor: any): Array<{chave: string, valor: any}> {
-    const camposPadrao = ['id', '_id', 'nome', 'tipo', 'localizacao', 'timestamp', 'data', 'status', 'unidade', 'valor'];
+    const camposPadrao = ['id', '_id', 'nome', 'tipo', 'localizacao', 'timestamp', 'data', 'status', 'unidade', 'valor', 'turbidez', 'ph', 'nivel_agua', 'umidade_terra'];
     const propriedades: Array<{chave: string, valor: any}> = [];
     
     Object.keys(sensor).forEach(chave => {
@@ -226,7 +223,10 @@ export class DashboardPage implements OnInit, OnDestroy {
   getIconePropriedade(chave: string): string {
     const chaveLower = chave.toLowerCase();
     if (chaveLower.includes('temperatura')) return 'thermometer-outline';
+    if (chaveLower.includes('umidade') && chaveLower.includes('terra')) return 'leaf-outline';
     if (chaveLower.includes('umidade')) return 'water-outline';
+    if (chaveLower.includes('turbidez')) return 'contrast-outline';
+    if (chaveLower.includes('ph')) return 'flask-outline';
     if (chaveLower.includes('bomba')) return 'settings-outline';
     if (chaveLower.includes('pressao')) return 'speedometer-outline';
     if (chaveLower.includes('nivel')) return 'analytics-outline';

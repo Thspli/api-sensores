@@ -20,14 +20,12 @@ Chart.register(...registerables);
 export class GraficosPage implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild('turbidezChart') turbidezChartRef!: ElementRef;
   @ViewChild('phChart') phChartRef!: ElementRef;
-  @ViewChild('comparacaoChart') comparacaoChartRef!: ElementRef;
-  @ViewChild('cloroChart') cloroChartRef!: ElementRef;
+  @ViewChild('nivelChart') nivelChartRef!: ElementRef;
 
-  // Charts
+  // Charts - APENAS 3
   turbidezChart: any;
   phChart: any;
-  comparacaoChart: any;
-  cloroChart: any;
+  nivelChart: any;
 
   periodoSelecionado: string = '24h';
 
@@ -38,14 +36,12 @@ export class GraficosPage implements OnInit, AfterViewInit, OnDestroy {
   // Subscription para atualização automática
   private atualizacaoSubscription?: Subscription;
 
-  // Estatísticas
+  // Estatísticas - APENAS 3
   estatisticas = {
     turbidezMedia: 0,
     turbidezTendencia: 0,
     phMedio: 0,
     phTendencia: 0,
-    cloroMedio: 0,
-    cloroTendencia: 0,
     nivelMedio: 0,
     nivelTendencia: 0
   };
@@ -71,7 +67,7 @@ export class GraficosPage implements OnInit, AfterViewInit, OnDestroy {
   }
 
   // ========================================
-  // CARREGAR DADOS DA API (USANDO O SERVIÇO)
+  // CARREGAR DADOS DA API
   // ========================================
 
   carregarDadosDaAPI() {
@@ -82,16 +78,13 @@ export class GraficosPage implements OnInit, AfterViewInit, OnDestroy {
         console.log('📥 Dados recebidos (ANTES da normalização):', dados);
         
         if (dados && dados.length > 0) {
-          // ✅ NORMALIZAR OS DADOS IMEDIATAMENTE
           this.dadosAPI = DataNormalizer.normalizarRegistros(dados);
           
-          // 🔍 DIAGNÓSTICO DETALHADO (pode remover depois)
           const diagnostico = DataNormalizer.diagnosticarDados(dados);
           console.log('📊 Diagnóstico de normalização:', {
             total: diagnostico.total,
             phForaEscala: diagnostico.phForaEscala,
             turbidezForaEscala: diagnostico.turbidezForaEscala,
-            cloroForaEscala: diagnostico.cloroForaEscala,
             nivelForaEscala: diagnostico.nivelForaEscala,
             exemplos: diagnostico.exemplos
           });
@@ -131,28 +124,25 @@ export class GraficosPage implements OnInit, AfterViewInit, OnDestroy {
       return;
     }
 
-    // Ordenar por timestamp (mais antigo primeiro)
     this.dadosAPI.sort((a, b) => {
       const dateA = new Date(a.timestamp || a.data).getTime();
       const dateB = new Date(b.timestamp || b.data).getTime();
       return dateA - dateB;
     });
 
-    // SEMPRE usa todos os dados disponíveis, independente da data
     this.historicoCompleto = [...this.dadosAPI];
 
     console.log(`📊 Processados ${this.historicoCompleto.length} registros da API`);
   }
 
   // ========================================
-  // CRIAR GRÁFICOS COM DADOS REAIS
+  // CRIAR GRÁFICOS - APENAS 3
   // ========================================
 
   criarGraficos() {
     this.criarGraficoTurbidez();
     this.criarGraficoPh();
-    this.criarGraficoComparacao();
-    this.criarGraficoCloro();
+    this.criarGraficoNivel();
   }
 
   // Gráfico de Linha - Turbidez
@@ -167,14 +157,14 @@ export class GraficosPage implements OnInit, AfterViewInit, OnDestroy {
         datasets: [{
           label: 'Turbidez (NTU)',
           data: dados.valores,
-          borderColor: '#3b82f6',
-          backgroundColor: 'rgba(59, 130, 246, 0.1)',
+          borderColor: '#fb923c',
+          backgroundColor: 'rgba(251, 146, 60, 0.1)',
           borderWidth: 3,
           fill: true,
           tension: 0.4,
           pointRadius: 4,
           pointHoverRadius: 6,
-          pointBackgroundColor: '#3b82f6',
+          pointBackgroundColor: '#fb923c',
           pointBorderColor: '#fff',
           pointBorderWidth: 2
         }]
@@ -211,144 +201,36 @@ export class GraficosPage implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
-  // Gráfico de Barras - Comparação
-  criarGraficoComparacao() {
-    const ctx = this.comparacaoChartRef.nativeElement.getContext('2d');
-    const medias = this.calcularMedias();
+  // Gráfico de Linha - Nível da Água
+  criarGraficoNivel() {
+    const ctx = this.nivelChartRef.nativeElement.getContext('2d');
+    const dados = this.extrairDadosParaGrafico('nivel');
 
-    this.comparacaoChart = new Chart(ctx, {
-      type: 'bar',
+    this.nivelChart = new Chart(ctx, {
+      type: 'line',
       data: {
-        labels: ['Turbidez', 'pH', 'Cloro', 'Nível Água'],
+        labels: dados.labels,
         datasets: [{
-          label: 'Média Atual',
-          data: [
-            medias.turbidez,
-            medias.ph,
-            medias.cloro,
-            medias.nivel
-          ],
-          backgroundColor: [
-            'rgba(59, 130, 246, 0.8)',
-            'rgba(16, 185, 129, 0.8)',
-            'rgba(251, 146, 60, 0.8)',
-            'rgba(139, 92, 246, 0.8)'
-          ],
-          borderColor: [
-            '#3b82f6',
-            '#10b981',
-            '#fb923c',
-            '#8b5cf6'
-          ],
-          borderWidth: 2,
-          borderRadius: 8
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: {
-            display: true,
-            position: 'top',
-            labels: {
-              font: { size: 12, weight: 'bold' },
-              padding: 15
-            }
-          },
-          tooltip: {
-            backgroundColor: 'rgba(0, 0, 0, 0.8)',
-            padding: 12,
-            titleFont: { size: 14, weight: 'bold' },
-            bodyFont: { size: 13 },
-            cornerRadius: 8
-          }
-        },
-        scales: {
-          y: {
-            beginAtZero: true,
-            grid: {
-              color: 'rgba(0, 0, 0, 0.05)'
-            },
-            ticks: {
-              font: { size: 11 }
-            }
-          },
-          x: {
-            grid: {
-              display: false
-            },
-            ticks: {
-              font: { size: 11 }
-            }
-          }
-        }
-      }
-    });
-  }
-
-  // Gráfico de Rosca - Cloro
-  criarGraficoCloro() {
-    const ctx = this.cloroChartRef.nativeElement.getContext('2d');
-    const distribuicao = this.calcularDistribuicaoCloro();
-
-    this.cloroChart = new Chart(ctx, {
-      type: 'doughnut',
-      data: {
-        labels: ['Ideal (1.5-2.5)', 'Aceitável (1-1.5 / 2.5-3)', 'Baixo (<1)', 'Alto (>3)'],
-        datasets: [{
-          data: [
-            distribuicao.ideal,
-            distribuicao.aceitavel,
-            distribuicao.baixo,
-            distribuicao.alto
-          ],
-          backgroundColor: [
-            'rgba(16, 185, 129, 0.8)',
-            'rgba(59, 130, 246, 0.8)',
-            'rgba(251, 146, 60, 0.8)',
-            'rgba(239, 68, 68, 0.8)'
-          ],
-          borderColor: '#fff',
+          label: 'Nível da Água (cm)',
+          data: dados.valores,
+          borderColor: '#8b5cf6',
+          backgroundColor: 'rgba(139, 92, 246, 0.1)',
           borderWidth: 3,
-          hoverOffset: 10
+          fill: true,
+          tension: 0.4,
+          pointRadius: 4,
+          pointHoverRadius: 6,
+          pointBackgroundColor: '#8b5cf6',
+          pointBorderColor: '#fff',
+          pointBorderWidth: 2
         }]
       },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: {
-            display: true,
-            position: 'bottom',
-            labels: {
-              font: { size: 12, weight: 'bold' },
-              padding: 15,
-              usePointStyle: true,
-              pointStyle: 'circle'
-            }
-          },
-          tooltip: {
-            backgroundColor: 'rgba(0, 0, 0, 0.8)',
-            padding: 12,
-            titleFont: { size: 14, weight: 'bold' },
-            bodyFont: { size: 13 },
-            cornerRadius: 8,
-            callbacks: {
-              label: (context: any) => {
-                const label = context.label || '';
-                const value = context.parsed || 0;
-                return `${label}: ${value}%`;
-              }
-            }
-          }
-        }
-      }
+      options: this.getOpcoesGraficoLinha('Nível da Água', 'cm')
     });
   }
 
   // ========================================
-  // EXTRAIR DADOS PARA GRÁFICOS (CORRIGIDO)
+  // EXTRAIR DADOS PARA GRÁFICOS
   // ========================================
 
   extrairDadosParaGrafico(tipo: string) {
@@ -359,7 +241,6 @@ export class GraficosPage implements OnInit, AfterViewInit, OnDestroy {
       return this.gerarDadosMockadosParaTipo(tipo);
     }
 
-    // Agrupar dados baseado no período
     const dadosAgrupados = this.agruparDadosPorPeriodo();
 
     dadosAgrupados.forEach(item => {
@@ -372,9 +253,6 @@ export class GraficosPage implements OnInit, AfterViewInit, OnDestroy {
           break;
         case 'ph':
           valor = item.ph || 0;
-          break;
-        case 'cloro':
-          valor = item.cloro || 0;
           break;
         case 'nivel':
           valor = item.nivel_agua || 0;
@@ -408,15 +286,12 @@ export class GraficosPage implements OnInit, AfterViewInit, OnDestroy {
           label: `${data.getHours()}h`,
           turbidez: [],
           ph: [],
-          cloro: [],
           nivel_agua: []
         };
       }
       
-      // ✅ OS DADOS JÁ ESTÃO NORMALIZADOS, mas validamos mesmo assim
       if (item.turbidez != null && item.turbidez > 0) grupos[chave].turbidez.push(item.turbidez);
       if (item.ph != null && item.ph > 0) grupos[chave].ph.push(item.ph);
-      if (item.cloro != null && item.cloro > 0) grupos[chave].cloro.push(item.cloro);
       if (item.nivel_agua != null && item.nivel_agua > 0) grupos[chave].nivel_agua.push(item.nivel_agua);
     });
   
@@ -424,10 +299,10 @@ export class GraficosPage implements OnInit, AfterViewInit, OnDestroy {
       label: grupo.label,
       turbidez: this.calcularMedia(grupo.turbidez),
       ph: this.calcularMedia(grupo.ph),
-      cloro: this.calcularMedia(grupo.cloro),
       nivel_agua: this.calcularMedia(grupo.nivel_agua)
     }));
   }
+
   agruparPorDia() {
     const grupos: any = {};
     
@@ -440,15 +315,12 @@ export class GraficosPage implements OnInit, AfterViewInit, OnDestroy {
           label: chave,
           turbidez: [],
           ph: [],
-          cloro: [],
           nivel_agua: []
         };
       }
       
-      // ✅ OS DADOS JÁ ESTÃO NORMALIZADOS, mas validamos mesmo assim
       if (item.turbidez != null && item.turbidez > 0) grupos[chave].turbidez.push(item.turbidez);
       if (item.ph != null && item.ph > 0) grupos[chave].ph.push(item.ph);
-      if (item.cloro != null && item.cloro > 0) grupos[chave].cloro.push(item.cloro);
       if (item.nivel_agua != null && item.nivel_agua > 0) grupos[chave].nivel_agua.push(item.nivel_agua);
     });
   
@@ -456,7 +328,6 @@ export class GraficosPage implements OnInit, AfterViewInit, OnDestroy {
       label: grupo.label,
       turbidez: this.calcularMedia(grupo.turbidez),
       ph: this.calcularMedia(grupo.ph),
-      cloro: this.calcularMedia(grupo.cloro),
       nivel_agua: this.calcularMedia(grupo.nivel_agua)
     }));
   }
@@ -464,7 +335,6 @@ export class GraficosPage implements OnInit, AfterViewInit, OnDestroy {
   calcularMedia(valores: number[]) {
     if (valores.length === 0) return 0;
     
-    // ✅ FILTRAR VALORES NULL/UNDEFINED E ZEROS
     const valoresValidos = valores.filter(v => v != null && !isNaN(v) && v > 0);
     
     if (valoresValidos.length === 0) return 0;
@@ -472,30 +342,24 @@ export class GraficosPage implements OnInit, AfterViewInit, OnDestroy {
     const soma = valoresValidos.reduce((acc, val) => acc + val, 0);
     const media = soma / valoresValidos.length;
     
-    // Arredondar para 2 casas decimais
     return Math.round(media * 100) / 100;
   }
 
   // ========================================
-  // CALCULAR MÉDIAS E ESTATÍSTICAS (CORRIGIDO)
+  // CALCULAR MÉDIAS E ESTATÍSTICAS
   // ========================================
 
   calcularMedias() {
     if (this.historicoCompleto.length === 0) {
-      return { turbidez: 0, ph: 0, cloro: 0, nivel: 0 };
+      return { turbidez: 0, ph: 0, nivel: 0 };
     }
   
-    // ✅ OS DADOS JÁ ESTÃO NORMALIZADOS - apenas filtra valores válidos
     const turbidez = this.historicoCompleto
       .map(d => d.turbidez)
       .filter(v => v != null && !isNaN(v) && v > 0);
     
     const ph = this.historicoCompleto
       .map(d => d.ph)
-      .filter(v => v != null && !isNaN(v) && v > 0);
-    
-    const cloro = this.historicoCompleto
-      .map(d => d.cloro)
       .filter(v => v != null && !isNaN(v) && v > 0);
     
     const nivel = this.historicoCompleto
@@ -505,33 +369,7 @@ export class GraficosPage implements OnInit, AfterViewInit, OnDestroy {
     return {
       turbidez: this.calcularMedia(turbidez),
       ph: this.calcularMedia(ph),
-      cloro: this.calcularMedia(cloro),
       nivel: this.calcularMedia(nivel)
-    };
-  }
-  
-
-  calcularDistribuicaoCloro() {
-    // ✅ OS DADOS JÁ ESTÃO NORMALIZADOS
-    const valores = this.historicoCompleto
-      .map(d => d.cloro)
-      .filter(v => v != null && !isNaN(v) && v > 0);
-    
-    if (valores.length === 0) {
-      return { ideal: 45, aceitavel: 30, baixo: 15, alto: 10 };
-    }
-  
-    const total = valores.length;
-    const ideal = valores.filter(v => v >= 1.5 && v <= 2.5).length;
-    const aceitavel = valores.filter(v => (v >= 1 && v < 1.5) || (v > 2.5 && v <= 3)).length;
-    const baixo = valores.filter(v => v < 1).length;
-    const alto = valores.filter(v => v > 3).length;
-  
-    return {
-      ideal: Math.round((ideal / total) * 100),
-      aceitavel: Math.round((aceitavel / total) * 100),
-      baixo: Math.round((baixo / total) * 100),
-      alto: Math.round((alto / total) * 100)
     };
   }
 
@@ -543,36 +381,32 @@ export class GraficosPage implements OnInit, AfterViewInit, OnDestroy {
       turbidezTendencia: this.calcularTendencia('turbidez'),
       phMedio: medias.ph,
       phTendencia: this.calcularTendencia('ph'),
-      cloroMedio: medias.cloro,
-      cloroTendencia: this.calcularTendencia('cloro'),
       nivelMedio: medias.nivel,
       nivelTendencia: this.calcularTendencia('nivel_agua')
     };
   }
 
-  // SUBSTITUA calcularTendencia() completo:
-calcularTendencia(campo: string) {
-  if (this.historicoCompleto.length < 2) return 0;
+  calcularTendencia(campo: string) {
+    if (this.historicoCompleto.length < 2) return 0;
 
-  // ✅ OS DADOS JÁ ESTÃO NORMALIZADOS
-  const valores = this.historicoCompleto
-    .map((d: any) => d[campo])
-    .filter((v: any) => v != null && !isNaN(v) && v > 0);
-  
-  if (valores.length < 2) return 0;
+    const valores = this.historicoCompleto
+      .map((d: any) => d[campo])
+      .filter((v: any) => v != null && !isNaN(v) && v > 0);
+    
+    if (valores.length < 2) return 0;
 
-  const metade = Math.floor(valores.length / 2);
-  const primeiraMetade = valores.slice(0, metade);
-  const segundaMetade = valores.slice(metade);
+    const metade = Math.floor(valores.length / 2);
+    const primeiraMetade = valores.slice(0, metade);
+    const segundaMetade = valores.slice(metade);
 
-  const mediaPrimeira = this.calcularMedia(primeiraMetade);
-  const mediaSegunda = this.calcularMedia(segundaMetade);
+    const mediaPrimeira = this.calcularMedia(primeiraMetade);
+    const mediaSegunda = this.calcularMedia(segundaMetade);
 
-  if (mediaPrimeira === 0) return 0;
+    if (mediaPrimeira === 0) return 0;
 
-  const tendencia = ((mediaSegunda - mediaPrimeira) / mediaPrimeira) * 100;
-  return Number(tendencia.toFixed(1));
-}
+    const tendencia = ((mediaSegunda - mediaPrimeira) / mediaPrimeira) * 100;
+    return Number(tendencia.toFixed(1));
+  }
 
   // ========================================
   // ATUALIZAÇÃO AUTOMÁTICA
@@ -585,7 +419,6 @@ calcularTendencia(campo: string) {
         next: (dados) => {
           console.log('♻️ Dados atualizados automaticamente');
           if (dados && dados.length > 0) {
-            // ✅ NORMALIZAR NA ATUALIZAÇÃO AUTOMÁTICA TAMBÉM
             this.dadosAPI = DataNormalizer.normalizarRegistros(dados);
             this.processarDados();
             this.calcularEstatisticas();
@@ -600,6 +433,7 @@ calcularTendencia(campo: string) {
         error: (err) => console.error('Erro na atualização automática:', err)
       });
   }
+
   // ========================================
   // ATUALIZAR GRÁFICOS
   // ========================================
@@ -616,8 +450,7 @@ calcularTendencia(campo: string) {
   destruirGraficos() {
     if (this.turbidezChart) this.turbidezChart.destroy();
     if (this.phChart) this.phChart.destroy();
-    if (this.comparacaoChart) this.comparacaoChart.destroy();
-    if (this.cloroChart) this.cloroChart.destroy();
+    if (this.nivelChart) this.nivelChart.destroy();
   }
 
   // ========================================
@@ -675,7 +508,7 @@ calcularTendencia(campo: string) {
   }
 
   // ========================================
-  // DADOS MOCKADOS (FALLBACK) - VALORES REALISTAS
+  // DADOS MOCKADOS (FALLBACK)
   // ========================================
 
   gerarDadosMockados() {
@@ -688,10 +521,9 @@ calcularTendencia(campo: string) {
 
       this.historicoCompleto.push({
         timestamp: timestamp.toISOString(),
-        turbidez: Math.random() * 15 + 5,      // Entre 5 e 20 NTU
-        ph: Math.random() * 1.5 + 6.5,         // Entre 6.5 e 8.0
-        cloro: Math.random() * 2 + 1,          // Entre 1 e 3 mg/L
-        nivel_agua: Math.random() * 30 + 40    // Entre 40 e 70 cm
+        turbidez: Math.random() * 15 + 5,
+        ph: Math.random() * 1.5 + 6.5,
+        nivel_agua: Math.random() * 30 + 40
       });
     }
   }
@@ -707,20 +539,17 @@ calcularTendencia(campo: string) {
 
       switch (tipo) {
         case 'turbidez':
-          valores.push(Math.random() * 15 + 5);      // Entre 5 e 20 NTU
+          valores.push(Math.random() * 15 + 5);
           break;
         case 'ph':
-          valores.push(Math.random() * 1.5 + 6.5);   // Entre 6.5 e 8.0
-          break;
-        case 'cloro':
-          valores.push(Math.random() * 2 + 1);       // Entre 1 e 3 mg/L
+          valores.push(Math.random() * 1.5 + 6.5);
           break;
         case 'nivel':
-          valores.push(Math.random() * 30 + 40);     // Entre 40 e 70 cm
+          valores.push(Math.random() * 30 + 40);
           break;
       }
     }
 
     return { labels, valores };
   }
-}     
+}
